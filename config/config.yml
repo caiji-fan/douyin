@@ -1,0 +1,69 @@
+# 应用服务配置
+server:
+  # 端口号
+  port: 8080
+  # 服务上下文
+  name: douyin
+# 数据库连接信息
+database:
+  # 连接url
+  dsn: "123"
+  # 连接池参数
+  pool:
+    # 最长空闲时间
+    connMaxIdleTime:
+    # 最大连接数
+    maxOpenConn:
+    # 最大空闲连接数
+    maxIdleConn:
+    # 连接的生命时长
+    connMaxLifetime:
+# 消息队列配置信息
+rabbit:
+  # 连接url
+  url: ""
+  # 交换机名
+  exchange:
+    service-exchange: "dy_service"
+  # 队列名
+  queue:
+    # 修改用户的关注数和粉丝数
+    change-follow-num: "change_follow_num"
+    # 上传文件到对象存储
+    upload-video: "upload_video"
+    # 投放视频到用户feed流
+    feed-video: "feed-video"
+  # 路由键名
+  key:
+    # 修改用户的关注数和粉丝数
+    change-follow-num: "change_follow_num"
+    # 上传文件到对象存储
+    upload-video: "upload_video"
+    # 投放视频到用户feed流
+    feed-video: "feed-video"
+# redis配置信息
+redis:
+  # redis连接url
+  url: ""
+  # redis键名
+  key:
+    # 用户token
+    token: "token"
+    # 消息队列消息备份
+    message-backup: "message_backup"
+    # 消息队列错误消息
+    error-message: "error_message"
+    # 用户feed流收件箱
+    outbox: "outbox"
+    # 大v发件箱
+    inbox: "inbox"
+  # 各个数据过期时间,数字+字符；如1s表示1秒
+  expire-time:
+    # 用户登录信息
+    token: ""
+    # 大v发件箱
+    outbox: ""
+    # 用户feed流收件箱
+    inbox: ""
+
+
