@@ -4,5 +4,11 @@
 // @DESC
 package bo
 
+// User 用户BO
 type User struct {
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	FollowCount   int    `json:"follow_count"`
+	FollowerCount int    `json:"follower_count"`
+	isFollow      bool   `json:"is_follow"`
 }

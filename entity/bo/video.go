@@ -4,5 +4,13 @@
 // @DESC
 package bo
 
+// Video 视频BO
 type Video struct {
+	ID            int    `json:"id"`
+	Author        User   `json:"author"`
+	PlayUrl       string `json:"play_url"`
+	CoverUrl      string `json:"cover_url"`
+	FavoriteCount int    `json:"favorite_count"`
+	CommentCount  int    `json:"comment_count"`
+	isFavorite    bool   `json:"is_favorite"`
 }

@@ -17,6 +17,7 @@ type config struct {
 	Server server   `yaml:"server"`
 }
 
+// Config 全局配置实例
 var Config *config
 
 // 读取yml文件

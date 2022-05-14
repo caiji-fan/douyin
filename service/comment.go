@@ -17,5 +17,5 @@ type Comment interface {
 
 	// CommentList 		查看评论列表
 	// videoId 			视频id
-	CommentList(videoId int) ([]bo.Video, error)
+	CommentList(videoId int) ([]bo.Comment, error)
 }
