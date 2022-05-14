@@ -1,7 +1,6 @@
 // Package po
 // @Author shaofan
 // @Date 2022/5/14
-// @DESC
 package po
 
 // EntityModel 实体模型

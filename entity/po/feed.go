@@ -1,7 +1,6 @@
 // Package po
 // @Author shaofan
 // @Date 2022/5/13
-// @DESC
 package po
 
 // Feed 视频流Po

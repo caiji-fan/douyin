@@ -1,7 +1,6 @@
 // Package controller
 // @Author shaofan
 // @Date 2022/5/13
-// @DESC
 package controller
 
 import "github.com/gin-gonic/gin"

@@ -1,7 +1,6 @@
 // Package bo
 // @Author shaofan
 // @Date 2022/5/14
-// @DESC
 package bo
 
 // RabbitMSG 消息队列标准消息体

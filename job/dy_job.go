@@ -1,7 +1,6 @@
 // Package job
 // @Author shaofan
 // @Date 2022/5/14
-// @DESC
 package job
 
 // ClearInBox 清理用户收件箱

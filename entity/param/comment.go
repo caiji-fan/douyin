@@ -1,7 +1,6 @@
 // Package param
 // @Author shaofan
 // @Date 2022/5/13
-// @DESC
 package param
 
 // Comment 上传与删除参数
