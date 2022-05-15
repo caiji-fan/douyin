@@ -10,19 +10,19 @@ import (
 	"log"
 )
 
-var db *gorm.DB
+var DB *gorm.DB
 
 // Init 初始化数据库连接
 func Init() {
 	dbConf := config.Config.DB
 	// 全局变量注意这里不要使用:=符号，这个符号会创建一个局部变量，无法给全局变量赋值
 	var err error
-	db, err = gorm.Open(mysql.Open(dbConf.DSN), &gorm.Config{})
+	DB, err = gorm.Open(mysql.Open(dbConf.DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("数据库连接错误 %v", err)
 		return
 	}
-	pool, err := db.DB()
+	pool, err := DB.DB()
 	if err != nil {
 		log.Fatalf("连接池初始化错误 %v", err)
 		return
