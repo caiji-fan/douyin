@@ -6,7 +6,7 @@ package main
 
 import (
 	"douyin/config"
-	"douyin/repositories"
+	"douyin/repositories/daoimpl"
 )
 
 func main() {
@@ -16,5 +16,5 @@ func init() {
 	// 配置文件初始化
 	config.Init()
 	// 数据库初始化
-	repositories.Init()
+	daoimpl.Init()
 }
