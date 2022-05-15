@@ -1,7 +1,7 @@
-// Package repositories
+// Package daoimpl
 // @Author shaofan
 // @Date 2022/5/13
-package repositories
+package daoimpl
 
 type Video struct {
 }

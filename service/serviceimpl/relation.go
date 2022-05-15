@@ -1,7 +1,7 @@
-// Package service
+// Package serviceimpl
 // @Author shaofan
 // @Date 2022/5/13
-package service
+package serviceimpl
 
 type Relation struct {
 }
