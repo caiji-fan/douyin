@@ -7,17 +7,17 @@ server:
 # 数据库连接信息
 database:
   # 连接url
-  dsn: "123"
+  dsn:
   # 连接池参数
   pool:
     # 最长空闲时间
-    connMaxIdleTime:
+    connMaxIdleTime: 60000000000
     # 最大连接数
-    maxOpenConn:
+    maxOpenConn: 10
     # 最大空闲连接数
-    maxIdleConn:
+    maxIdleConn: 5
     # 连接的生命时长
-    connMaxLifetime:
+    connMaxLifetime: 60000000000
 # 消息队列配置信息
 rabbit:
   # 连接url
