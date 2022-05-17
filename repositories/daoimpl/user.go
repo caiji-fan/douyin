@@ -7,6 +7,7 @@ import (
 	"douyin/entity/po"
 	"douyin/repositories"
 	"errors"
+	"gorm.io/gorm"
 	"sync"
 )
 
@@ -25,74 +26,59 @@ func NewUserInstance() repositories.User {
 	})
 	return user
 }
+func (UserImpl) Begin() (*gorm.DB, error) {
+	tx := db.Begin()
+	if tx == nil {
+		return nil, errors.New("事务链接获取失败")
+	}
+	return tx, nil
+}
 func (UserImpl) QueryById(userId int) (*po.User, error) {
+	db1 := db
 	user := po.User{}
-	DB.Where("id = ?", userId).Find(&user) //根据id查数据
-	if user.Name == "" {                   //测试如果这个人的名字如果为空的话就是没查到，也可以识别的字段如id
-		return &user, errors.New("查询不到该用户！！！")
+	db1.Where("id = ?", userId).Find(&user) //根据id查数据
+	if user.Name == "" {                    //测试如果这个人的名字如果为空的话就是没查到，也可以识别的字段如id
+		return &user, errors.New("查询不到该数据！！！")
 	}
 	return &user, nil
 }
-func (UserImpl) Insert(user *po.User) (int, error) {
-	var ids []int    //插入数据并且返回id
-	tx := DB.Begin() //因为同时要插入数据兼返回主键，这里涉及两个数据库操作，所以这里要用手动事务
-	err := DB.Create(user).Error
-	if err != nil {
-		tx.Rollback() //回滚
-		return -1, errors.New("注册失败")
+func (UserImpl) Insert(tx *gorm.DB, isTx bool, user *po.User) (int, error) {
+	var client *gorm.DB
+	if isTx {
+		client = tx
+	} else {
+		client = db
 	}
-	DB.Raw("select LAST_INSERT_ID() as id").Pluck("id", &ids)
-	tx.Commit() //提交
-	return ids[0], err
+	var err error
+	err = client.Omit("id", "create_time", "update_time").Create(user).Error
+	if err != nil {
+		return -1, errors.New("验证失败")
+	}
+	return (*user).ID, err
 }
 func (UserImpl) QueryBatchIds(userIds *[]int) (*[]po.User, error) {
+	db1 := db
 	userList := []po.User{} //根据一堆id查多个用户数据
-	DB.Where("id IN ?", *userIds).Find(&userList)
-	var err error = nil
+	var err error
+	db1.Where("id IN ?", *userIds).Find(&userList)
 	if len(userList) == 0 {
-		err = errors.New("查无此人")
+		err = errors.New("查不到任何数据")
 	}
 	return &userList, err
 }
-func (UserImpl) QueryByName(userName string) (*po.User, error) {
-	user := po.User{} //根据名字查用户(用于验证用户名是否唯一，验证密码是否正确)
-	DB.Where("name = ?", userName).Find(&user)
+func (UserImpl) QueryByCondition(user *po.User) (*[]po.User, error) {
+	db1 := db
+	var err error
+	var users []po.User
+	if user.ID != 0 {
+		db1 = db1.Where(" id=?", user.ID)
+	}
 	if user.Name != "" {
-		return &user, errors.New("用户名重复，注册失败")
+		db1 = db1.Where(" name=?", user.Name)
 	}
-	return nil, errors.New("用户名或密码输入错误，请重试")
-}
-func (UserImpl) UpdateFollowById(id int, t int) error {
-	DB.Begin()
-	user := po.User{}
-	err := DB.Where("id=?", id).Find(&user).Error
-	if err != nil || user.Name == "" {
-		DB.Rollback()
-		return errors.New("该用户不存在，关注数更改失败")
+	err = db1.Find(&users).Error
+	if err != nil {
+		return nil, err
 	}
-	follow_count := t + user.FollowCount
-	if follow_count < 0 {
-		DB.Rollback()
-		return errors.New("数据出错，关注数不可为负")
-	}
-	DB.Model(user).Where("id=?", id).Update("follow_count", follow_count)
-	DB.Commit()
-	return nil
-}
-func (UserImpl) UpdateFollowerById(id int, t int) error {
-	DB.Begin()
-	user := po.User{}
-	err := DB.Where("id=?", id).Find(&user).Error
-	if err != nil || user.Name == "" {
-		DB.Rollback()
-		return errors.New("该用户不存在，粉丝数更改失败")
-	}
-	follower_count := t + user.FollowerCount
-	if follower_count < 0 {
-		DB.Rollback()
-		return errors.New("数据出错，粉丝数不可为负")
-	}
-	DB.Model(user).Where("id=?", id).Update("follower_count", follower_count)
-	DB.Commit()
-	return nil
+	return &users, nil
 }

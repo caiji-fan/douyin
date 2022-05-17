@@ -19,7 +19,7 @@ type User interface {
 	// userName 	用户名
 	// password 	用户密码
 	// @return 		1、用户id;2、鉴权token
-	Login(userName string, password string) (int, string, error)
+	Login(userParam param.User) (int, string, error)
 
 	// UserInfo 	查看用户信息
 	// userId 		用户id
