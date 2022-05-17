@@ -61,7 +61,6 @@ func (r Relation) FollowList(userId int) ([]bo.User, error) {
 		return nil, err
 	}
 	return *busers, nil
-	return nil, nil
 }
 
 func (r Relation) FansList(userId int) ([]bo.User, error) {

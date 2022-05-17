@@ -19,7 +19,7 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 // GetVideoBOS 		获取视频BO实例集
 // src				视频PO集
 // dest				视频BO集
-func GetVideoBOS(src *[]po.User, dest *[]bo.User) error {
+func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 	return nil
 }
 

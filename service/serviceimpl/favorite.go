@@ -9,6 +9,7 @@ import (
 	"douyin/entity/po"
 	"douyin/repositories/daoimpl"
 	"douyin/service"
+	"douyin/util/entityutil"
 	"sync"
 )
 
@@ -36,12 +37,22 @@ func (f Favorite) Like(favoriteParam *param.Favorite) error {
 }
 
 func (f Favorite) FavoriteList(userId int) ([]bo.Video, error) {
-	//videosId,err := favoriteDao.QueryVideoIdsByUserId(userId)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//TODO 根据视频videosId 查询对video信息切片  再转换为bo.Video
-	return nil, nil
+	videosId, err := favoriteDao.QueryVideoIdsByUserId(userId)
+	if err != nil {
+		return nil, err
+	}
+	videoDao := daoimpl.NewVideoDaoInstance()
+	var pvideos *[]po.Video
+	pvideos, err = videoDao.QueryBatchIds(videosId)
+	if err != nil {
+		return nil, err
+	}
+	var bvideos *[]bo.Video
+	err = entityutil.GetVideoBOS(pvideos, bvideos)
+	if err != nil {
+		return nil, err
+	}
+	return *bvideos, nil
 }
 
 func (f Favorite) IsFavorite(videoId int, userId int) (bool, error) {
