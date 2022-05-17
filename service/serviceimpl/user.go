@@ -32,9 +32,9 @@ func NewUserService() service.User {
 }
 func (UserServiceImpl) UserInfo(userId int) (bo.User, error) {
 	bouser := bo.User{}
-	pouser, err := daoimpl.NewUserDaoInstance().QueryById(userId) //调用dao层根据id查用户方法
-	if err != nil {
-		return bouser, err
+	pouser, _ := daoimpl.NewUserDaoInstance().QueryById(userId) //调用dao层根据id查用户方法
+	if pouser == nil {
+		return bouser, errors.New("查无此人")
 	}
 	entityutil.GetUserBO(pouser, &bouser)
 	return bouser, nil
