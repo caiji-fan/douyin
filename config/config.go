@@ -22,7 +22,8 @@ var Config *config
 
 // 读取yml文件
 func readConfig() {
-	file, err := ioutil.ReadFile("config/config.yml")
+	file, err := ioutil.ReadFile("./config/config.yml") //启动项目测试时用
+	//file, err := ioutil.ReadFile("../../config/config.yml") //单元测试时用
 	if err != nil {
 		log.Fatalln("读取文件config.yml发生错误", err)
 		return
