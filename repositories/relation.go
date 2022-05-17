@@ -16,6 +16,12 @@ type Relation interface {
 	// follow 					删除条件
 	DeleteByCondition(follow *po.Follow) error
 
+	//QueryByCondition          查询登录用户是否关注此人
+	//followId					此用户id
+	//followerId 				登录用户id
+	//@return 					结果true/false
+	QueryByCondition(followId int, followerId int) (bool, error)
+
 	// QueryFollowIdByFansId 	通过粉丝id查询关注id集
 	// fansId 					关注id
 	// @return 					关注id集

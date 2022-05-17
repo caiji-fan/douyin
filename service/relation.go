@@ -3,7 +3,10 @@
 // @Date 2022/5/13
 package service
 
-import "douyin/entity/bo"
+import (
+	"douyin/entity/bo"
+	"douyin/entity/param"
+)
 
 // Relation 		关注关系业务接口
 type Relation interface {
@@ -11,7 +14,7 @@ type Relation interface {
 	// userId 		自己的id
 	// toUserId 	对方的id
 	// actionType 	操作类型，1-关注，2-取消关注
-	Follow(userId int, toUserId int, actionType int) error
+	Follow(relationParam *param.Relation) error
 
 	// FollowList 	查看关注列表
 	// userId 		用户id
@@ -22,4 +25,10 @@ type Relation interface {
 	// userId 		用户id
 	// @return 		粉丝用户列表
 	FansList(userId int) ([]bo.User, error)
+
+	//IsFollow					查询登录用户是否关注此用户
+	//followId					此用户id
+	//followerId 				登录用户id
+	//@return 					结果true/false
+	IsFollow(followId int, followerId int) (bool, error)
 }
