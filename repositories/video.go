@@ -27,4 +27,13 @@ type Video interface {
 	// latestTime					上一次最有一条视频时间
 	// @return 						视频列表
 	QueryByLatestTimeDESC(latestTime string) (*[]po.Video, error)
+
+	// QueryById 					根据id查询
+	// id							视频id
+	// @return						视频实体
+	QueryById(id int) (*po.Video, error)
+
+	// UpdateByCondition 			条件更新
+	// video						更新条件
+	UpdateByCondition(video *po.Video) error
 }
