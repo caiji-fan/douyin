@@ -9,3 +9,7 @@ type Follow struct {
 	FollowId   int `json:"follow_id" gorm:"follow_id;primaryKey"`
 	FollowerId int `json:"follower_id" gorm:"follower_id;primaryKey"`
 }
+
+func (Follow) TableName() string {
+	return "dy_follow"
+}

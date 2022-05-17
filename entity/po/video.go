@@ -12,3 +12,7 @@ type Video struct {
 	CommentCount  int    `json:"comment_count" gorm:"comment_count;not null"`
 	AuthorId      int    `json:"author_id" gorm:"author_id;not null"`
 }
+
+func (Video) TableName() string {
+	return "dy_video"
+}

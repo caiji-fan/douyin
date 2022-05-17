@@ -7,9 +7,14 @@ package main
 import (
 	"douyin/config"
 	"douyin/repositories/daoimpl"
+	"douyin/route"
+	"github.com/gin-gonic/gin"
 )
 
+var r *gin.Engine
+
 func main() {
+	r.Run()
 }
 
 func init() {
@@ -17,4 +22,7 @@ func init() {
 	config.Init()
 	// 数据库初始化
 	daoimpl.Init()
+
+	//路由初始化
+	r = route.InitRoute()
 }
