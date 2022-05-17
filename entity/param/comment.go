@@ -5,14 +5,14 @@ package param
 
 const (
 	DO_COMMENT     = 1
-	DELETE_COMMENT = 0
+	DELETE_COMMENT = 2
 )
 
 // Comment 上传与删除参数
 type Comment struct {
-	VideoID     int    `json:"video_id"`
-	ActionType  byte   `json:"action_type"`
-	CommentText string `json:"comment_text"`
-	UserId      int    `json:"user_id"`
-	CommentId   int    `json:"comment_id"`
+	VideoID     int    `form:"video_id" `
+	ActionType  byte   `form:"action_type" binding:"required" msg:"无效的操作类型"`
+	CommentText string `form:"comment_text"`
+	UserId      int    `form:"user_id"`
+	CommentId   int    `form:"comment_id"`
 }

@@ -72,7 +72,7 @@ func (c Comment) CommentList(videoId int) (*[]bo.Comment, error) {
 	//}
 	// 查询
 	commentDao := daoimpl.NewCommentDaoInstance()
-	var comment *po.Comment
+	var comment = new(po.Comment)
 	comment.VideoId = videoId
 	comments, err := commentDao.QueryByCondition(comment)
 	if err != nil {
