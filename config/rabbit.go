@@ -13,13 +13,13 @@ type rabbit struct {
 		FeedVideo       string `yaml:"feed-video"`
 	} `yaml:"queue"`
 
-	exchange struct {
+	Key struct {
 		ChangeFollowNum string `yaml:"change-follow-num"`
 		UploadVideo     string `yaml:"upload-video"`
 		FeedVideo       string `yaml:"feed-video"`
-	} `yaml:"exchange"`
-
-	Key struct {
-		ServiceExchange string `yaml:"dy_exchange"`
 	} `yaml:"key"`
+
+	Exchange struct {
+		ServiceExchange string `yaml:"service-exchange"`
+	} `yaml:"exchange"`
 }

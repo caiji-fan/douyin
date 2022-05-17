@@ -18,5 +18,5 @@ type redis struct {
 		Token  string `yaml:"token"`
 		Outbox string `yaml:"outbox"`
 		Inbox  string `yaml:"inbox"`
-	} `yaml:"expire_time"`
+	} `yaml:"expire-time"`
 }
