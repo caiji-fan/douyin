@@ -7,14 +7,20 @@ package main
 import (
 	"douyin/config"
 	"douyin/repositories/daoimpl"
-	"douyin/route"
+	route2 "douyin/route"
+	"douyin/util/rabbitutil"
 	"github.com/gin-gonic/gin"
+	"log"
+	"strconv"
 )
 
-var r *gin.Engine
+var route *gin.Engine
 
 func main() {
-	r.Run()
+	err := route.Run(":" + strconv.Itoa(config.Config.Server.Port))
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func init() {
@@ -22,7 +28,8 @@ func init() {
 	config.Init()
 	// 数据库初始化
 	daoimpl.Init()
-
-	//路由初始化
-	r = route.InitRoute()
+	// 路由初始化
+	route = route2.InitRoute()
+	// 消息队列初始化
+	rabbitutil.Init()
 }

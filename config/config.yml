@@ -7,11 +7,11 @@ server:
 # 数据库连接信息
 database:
   # 连接url
-  dsn: "root:root@(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "root:curry@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
   # 连接池参数
   pool:
     # 最长空闲时间
-    connMaxIdleTime: 60000000000
+    connMaxIdleTime: 30000000000
     # 最大连接数
     maxOpenConn: 10
     # 最大空闲连接数
@@ -21,7 +21,7 @@ database:
 # 消息队列配置信息
 rabbit:
   # 连接url
-  url: ""
+  url: "amqp://douyin:douyin@localhost:5672/douyin"
   # 交换机名
   exchange:
     service-exchange: "dy_service"
@@ -54,16 +54,27 @@ redis:
     # 消息队列错误消息
     error-message: "error_message"
     # 用户feed流收件箱
-    outbox: "outbox"
+    inbox: "inbox:"
     # 大v发件箱
-    inbox: "inbox"
+    outbox: "outbox:"
   # 各个数据过期时间,数字+字符；如1s表示1秒
   expire-time:
     # 用户登录信息
-    token: ""
+    token: "2h"
     # 大v发件箱
-    outbox: ""
+    outbox: "24h"
     # 用户feed流收件箱
-    inbox: ""
-
+    inbox: "24h"
+obs:
+  access-key: "VVPFQEDOWRK61JLN4RPY"
+  secret-key: "50yimoVp8qOdHa4FvPshKB1O8ZBNu4y73vOcw6XX"
+  end-point: "https://obs.cn-north-4.myhuaweicloud.com"
+  location: "cn-north-4"
+  buckets:
+    video: "dy-video"
+service:
+  # 标识大v的粉丝数
+  big-v-num: 1000000
+  # 临时路径
+  temp-dir: ""
 

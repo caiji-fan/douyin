@@ -11,30 +11,41 @@ import (
 
 // InitRoute 初始化接口路由
 func InitRoute() *gin.Engine {
-	gin.ForceConsoleColor()
-	router := gin.Default()
+	route := gin.Default()
 
-	//路由分组信息
-	//relation
-	relationGroup := router.Group("/douyin/relation")
+	withAUTH := route.Group("douyin", middleware.JWTAuth)
+	user1 := withAUTH.Group("user")
 	{
-		//关注/取消关注
-		relationGroup.POST("/action", middleware.JWTAuth, controller.Follow)
-		//用户关注列表
-		relationGroup.GET("/follow/list", middleware.JWTAuth, controller.FollowList)
-		//用户粉丝列表
-		relationGroup.GET("/follower/list", middleware.JWTAuth, controller.FansList)
-
+		user1.GET("", controller.UserInfo)
 	}
-	//favorite
-	favoriteGroup := router.Group("/douyin/favorite")
+	publish := withAUTH.Group("publish")
 	{
-		//关注/取消关注
-		favoriteGroup.POST("/action", middleware.JWTAuth, controller.Like)
-		//用户关注列表
-		favoriteGroup.GET("/list", middleware.JWTAuth, controller.FavoriteList)
-
+		publish.GET("list", controller.VideoList)
+		publish.POST("action", controller.Publish)
 	}
-	return router
+	favorite := withAUTH.Group("favorite")
+	{
+		favorite.GET("list", controller.FavoriteList)
+		favorite.POST("action", controller.Like)
+	}
+	comment := withAUTH.Group("comment")
+	{
+		comment.GET("list", controller.CommentList)
+		comment.POST("action", controller.Comment)
+	}
+	relation := withAUTH.Group("relation")
+	{
+		relation.GET("follow/list", controller.FollowList)
+		relation.GET("follower/list", controller.FansList)
+		relation.POST("action", controller.Follow)
+	}
 
+	withoutAUTH := route.Group("douyin")
+	withoutAUTH.GET("feed", controller.Feed)
+	user2 := withoutAUTH.Group("user")
+	{
+		user2.POST("register", controller.Register)
+		user2.POST("login", controller.Login)
+	}
+	return route
 }
