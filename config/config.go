@@ -11,10 +11,12 @@ import (
 
 // Config 配置信息
 type config struct {
-	DB     database `yaml:"database"`
-	Redis  redis    `yaml:"redis"`
-	Rabbit rabbit   `yaml:"rabbit"`
-	Server server   `yaml:"server"`
+	DB      database `yaml:"database"`
+	Redis   redis    `yaml:"redis"`
+	Rabbit  rabbit   `yaml:"rabbit"`
+	Server  server   `yaml:"server"`
+	Obs     obs      `yaml:"obs"`
+	Service service  `yaml:"service"`
 }
 
 // Config 全局配置实例
@@ -22,7 +24,7 @@ var Config *config
 
 // 读取yml文件
 func readConfig() {
-	file, err := ioutil.ReadFile("config/config.yml")
+	file, err := ioutil.ReadFile("../../config/config.yml")
 	if err != nil {
 		log.Fatalln("读取文件config.yml发生错误", err)
 		return
