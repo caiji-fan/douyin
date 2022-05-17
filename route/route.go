@@ -10,7 +10,7 @@ import (
 )
 
 // InitRoute 初始化接口路由
-func InitRoute() {
+func InitRoute() *gin.Engine {
 	route := gin.Default()
 
 	withAUTH := route.Group("douyin", middleware.JWTAuth)
@@ -47,4 +47,5 @@ func InitRoute() {
 		user2.POST("register", controller.Register)
 		user2.POST("login", controller.Login)
 	}
+	return route
 }
