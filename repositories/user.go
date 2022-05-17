@@ -3,7 +3,10 @@
 // @Date 2022/5/13
 package repositories
 
-import "douyin/entity/po"
+import (
+	"douyin/entity/po"
+	"gorm.io/gorm"
+)
 
 // User 用户持久层接口
 type User interface {
@@ -37,5 +40,4 @@ type User interface {
 	// user				用户
 	// @return 			用户切片
 	QueryByCondition(user *po.User) (*[]po.User, error)
-
 }

@@ -32,7 +32,7 @@ func NewUserService() service.User {
 }
 func (UserServiceImpl) UserInfo(userId int) (bo.User, error) {
 	bouser := bo.User{}
-	pouser, err := daoimpl.NewUserInstance().QueryById(userId) //调用dao层根据id查用户方法
+	pouser, err := daoimpl.NewUserDaoInstance().QueryById(userId) //调用dao层根据id查用户方法
 	if err != nil {
 		return bouser, err
 	}
@@ -42,7 +42,7 @@ func (UserServiceImpl) UserInfo(userId int) (bo.User, error) {
 func (UserServiceImpl) Register(userParam param.User) (int, string, error) {
 	pouser := po.User{}
 	pouser.Name = userParam.UserName
-	users, err := daoimpl.NewUserInstance().QueryByCondition(&pouser)
+	users, err := daoimpl.NewUserDaoInstance().QueryByCondition(&pouser)
 	if len(*users) != 0 {
 		return 0, "", errors.New("用户名已存在")
 	}
@@ -52,7 +52,7 @@ func (UserServiceImpl) Register(userParam param.User) (int, string, error) {
 	}
 	pouser.FollowCount = 0 //初始关注数和粉丝数都应是0
 	pouser.FollowerCount = 0
-	userid, err := daoimpl.NewUserInstance().Insert(nil, false, &pouser) //执行插入并返回用户id
+	userid, err := daoimpl.NewUserDaoInstance().Insert(nil, false, &pouser) //执行插入并返回用户id
 	//TODO token工具类获取token
 	jwt, err := jwtutil.CreateJWT(userid)
 	if err != nil {
@@ -63,7 +63,7 @@ func (UserServiceImpl) Register(userParam param.User) (int, string, error) {
 func (UserServiceImpl) Login(userParam param.User) (int, string, error) {
 	pouser := po.User{}
 	pouser.Name = userParam.UserName
-	users, err := daoimpl.NewUserInstance().QueryByCondition(&pouser)
+	users, err := daoimpl.NewUserDaoInstance().QueryByCondition(&pouser)
 	if len(*users) == 0 {
 		return 0, "", errors.New("用户不存在")
 	}

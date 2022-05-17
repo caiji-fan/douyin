@@ -20,18 +20,14 @@ var (
 )
 
 //单例模式，下次使用如果有这个实例就用这个实例，没有时再创建
-func NewUserInstance() repositories.User {
+func NewUserDaoInstance() repositories.User {
 	userOnce.Do(func() {
 		user = UserImpl{}
 	})
 	return user
 }
-func (UserImpl) Begin() (*gorm.DB, error) {
-	tx := db.Begin()
-	if tx == nil {
-		return nil, errors.New("事务链接获取失败")
-	}
-	return tx, nil
+func (UserImpl) Begin() *gorm.DB {
+	return db.Begin()
 }
 func (UserImpl) QueryById(userId int) (*po.User, error) {
 	db1 := db
@@ -81,4 +77,13 @@ func (UserImpl) QueryByCondition(user *po.User) (*[]po.User, error) {
 		return nil, err
 	}
 	return &users, nil
+}
+func (i UserImpl) QueryForUpdate(userId int) (*po.User, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (i UserImpl) UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error {
+	//TODO implement me
+	panic("implement me")
 }

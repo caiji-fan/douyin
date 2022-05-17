@@ -27,7 +27,7 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 		ids[i] = sr.SenderId
 		i++
 	}
-	userList, err := daoimpl.NewUserInstance().QueryBatchIds(&ids)
+	userList, err := daoimpl.NewUserDaoInstance().QueryBatchIds(&ids)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 		temp2 := &temp1 //temp2是temp1的地址，
 		cu[sr.AuthorId] = append(cu[sr.AuthorId], temp2)
 	}
-	userList, err := daoimpl.NewUserInstance().QueryBatchIds(&ids)
+	userList, err := daoimpl.NewUserDaoInstance().QueryBatchIds(&ids)
 	if err != nil {
 		return err
 	}

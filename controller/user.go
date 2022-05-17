@@ -11,20 +11,17 @@ import (
 	"strconv"
 )
 
-type UserControllers struct {
-}
-
 // Register 		用户注册
-func (usc UserControllers) Register(context *gin.Context) {
+func Register(context *gin.Context) {
 	var user param.User
 	err := context.ShouldBindQuery(&user)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"status_code": -1,
-			//"status_msg":get
-			"status_msg": err.Error(),
-			"user_id":    0,
-			"token":      "",
+			"status_msg":  GetValidMsg(err, user),
+			//"status_msg": err.Error(),
+			"user_id": 0,
+			"token":   "",
 		})
 		return
 	}
@@ -47,16 +44,16 @@ func (usc UserControllers) Register(context *gin.Context) {
 }
 
 // Login 			用户登录
-func (usc UserControllers) Login(context *gin.Context) {
+func Login(context *gin.Context) {
 	var user param.User
 	err := context.ShouldBindQuery(&user)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"status_code": -1,
-			//"status_msg":get
-			"status_msg": err.Error(),
-			"user_id":    0,
-			"token":      "",
+			"status_msg":  GetValidMsg(err, user),
+			//"status_msg": err.Error(),
+			"user_id": 0,
+			"token":   "",
 		})
 		return
 	}
@@ -79,7 +76,7 @@ func (usc UserControllers) Login(context *gin.Context) {
 }
 
 // UserInfo 		查看用户信息
-func (usc UserControllers) UserInfo(context *gin.Context) {
+func UserInfo(context *gin.Context) {
 	userId := context.Query("user_id")
 	id, _ := strconv.Atoi(userId)
 
