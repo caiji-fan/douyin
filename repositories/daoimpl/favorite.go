@@ -13,8 +13,7 @@ type Favorite struct {
 }
 
 func (f Favorite) Insert(favorite *po.Favorite) error {
-	result := db.Select([]string{"video_id", "user_id"}).Create(favorite)
-	err := result.Error
+	err := db.Select([]string{"video_id", "user_id"}).Create(favorite).Error
 	if err != nil {
 		return err
 	}
@@ -22,10 +21,9 @@ func (f Favorite) Insert(favorite *po.Favorite) error {
 }
 
 func (f Favorite) QueryVideoIdsByUserId(userId int) ([]int, error) {
-	var videoIds []int
-	var favorites []po.Favorite
-	result := db.Select("video_id").Where("user_id = ?", userId).Order("create_time desc").Find(&favorites)
-	err := result.Error
+	videoIds := []int{}
+	favorites := []po.Favorite{}
+	err := db.Select("video_id").Where("user_id = ?", userId).Order("create_time desc").Find(&favorites).Error
 	if err != nil {
 		return nil, err
 	}
@@ -38,25 +36,36 @@ func (f Favorite) QueryVideoIdsByUserId(userId int) ([]int, error) {
 func (f Favorite) DeleteByCondition(favorite *po.Favorite) error {
 	videoId := favorite.VideoId
 	userId := favorite.UserId
-	result := db.Where("video_id = ? and user_id = ?", videoId, userId).Delete(&po.Favorite{})
-	err := result.Error
+	db1 := db
+	if videoId != 0 {
+		db1 = db1.Where("video_id = ?", videoId)
+	}
+	if userId != 0 {
+		db1 = db1.Where("user_id = ?", userId)
+	}
+	err := db1.Delete(&po.Favorite{}).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (f Favorite) QueryByCondition(videoId int, userId int) (bool, error) {
-	result := db.Where("video_id = ? and user_id = ?", videoId, userId).Find(&po.Favorite{})
-	err := result.Error
+func (f Favorite) QueryByCondition(favorite *po.Favorite) (*[]po.Favorite, error) {
+	videoId := favorite.VideoId
+	userId := favorite.UserId
+	db1 := db
+	if videoId != 0 {
+		db1 = db1.Where("video_id = ?", videoId)
+	}
+	if userId != 0 {
+		db1 = db1.Where("user_id = ?", userId)
+	}
+	var favorites []po.Favorite
+	err := db1.Find(&favorites).Error
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	if result.RowsAffected > 0 {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	return &favorites, nil
 }
 
 var (
