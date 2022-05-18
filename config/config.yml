@@ -7,7 +7,7 @@ server:
 # 数据库连接信息
 database:
   # 连接url
-  dsn: "root:curry@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "root:root@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
   # 连接池参数
   pool:
     # 最长空闲时间
@@ -48,7 +48,7 @@ redis:
   # redis键名
   key:
     # 用户token
-    token: "token"
+    token: "token:"
     # 消息队列消息备份
     message-backup: "message_backup"
     # 消息队列错误消息

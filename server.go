@@ -8,7 +8,6 @@ import (
 	"douyin/config"
 	"douyin/repositories/daoimpl"
 	route2 "douyin/route"
-	"douyin/util/rabbitutil"
 	"github.com/gin-gonic/gin"
 	"log"
 	"strconv"
@@ -31,5 +30,5 @@ func init() {
 	// 路由初始化
 	route = route2.InitRoute()
 	// 消息队列初始化
-	rabbitutil.Init()
+	//rabbitutil.Init()
 }
