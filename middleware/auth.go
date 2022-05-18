@@ -14,7 +14,7 @@ import (
 func JWTAuth(ctx *gin.Context) {
 
 	//获取参数user_id
-	user_id, err1 := strconv.Atoi(ctx.Query("user_id"))
+	userId, err1 := strconv.Atoi(ctx.Query("user_id"))
 	if err1 != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"status_code": http.StatusBadRequest,
@@ -56,7 +56,7 @@ func JWTAuth(ctx *gin.Context) {
 	//}
 
 	//对比两个id是否一致
-	if uid != user_id {
+	if uid != userId {
 		//id不一致
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"status_code": http.StatusBadRequest,

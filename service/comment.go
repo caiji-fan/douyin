@@ -15,6 +15,6 @@ type Comment interface {
 	Comment(commentParam *param.Comment) error
 
 	// CommentList 		查看评论列表
-	// commentListParam 视频id参数
-	CommentList(commentListParam *param.CommentList) (*[]bo.Comment, error)
+	// videoId			视频id
+	CommentList(videoId int) (*[]bo.Comment, error)
 }

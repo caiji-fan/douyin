@@ -5,7 +5,12 @@ package param
 
 // Favorite 点赞参数
 type Favorite struct {
-	UserID     int  `json:"user_id" form:"user_id"`
-	VideoID    int  `json:"video_id" form:"video_id"`
-	ActionType byte `json:"action_type" form:"action_type"  binding:"required" msg:"无效的操作类型"`
+	UserID     int  `form:"user_id" binding:"required" msg:"无效的用户标识"`
+	VideoID    int  `form:"video_id" binding:"required" msg:"无效的视频标识"`
+	ActionType byte `form:"action_type"  binding:"required" msg:"无效的操作类型"`
+}
+
+// FavoriteList 点赞列表参数
+type FavoriteList struct {
+	UserId int `form:"user_id" binding:"required" msg:"无效的用户标识"`
 }
