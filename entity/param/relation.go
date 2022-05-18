@@ -11,3 +11,7 @@ type Relation struct {
 	ToUserID   int  `json:"to_user_id" form:"to_user_id"`
 	ActionType byte `json:"action_type" form:"action_type"  binding:"required" msg:"无效的操作类型"`
 }
+
+type FollowList struct {
+	UserID int `form:"user_id" binding:"required" msg:"无效的用户标识"`
+}

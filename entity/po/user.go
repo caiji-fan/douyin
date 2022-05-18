@@ -11,3 +11,7 @@ type User struct {
 	FollowCount   int    `json:"follow_count" gorm:"follow_count;not null"`
 	FollowerCount int    `json:"follower_count" gorm:"follower_count;not null"`
 }
+
+func (User) TableName() string {
+	return "dy_user"
+}

@@ -11,6 +11,7 @@ type Video struct {
 	FavoriteCount int    `json:"favorite_count" gorm:"favorite_count;not null"`
 	CommentCount  int    `json:"comment_count" gorm:"comment_count;not null"`
 	AuthorId      int    `json:"author_id" gorm:"author_id;not null"`
+	Title         string `json:"title" gorm:"title not null"`
 }
 
 func (Video) TableName() string {

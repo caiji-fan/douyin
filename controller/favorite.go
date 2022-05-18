@@ -6,9 +6,10 @@ package controller
 import (
 	"douyin/entity/param"
 	"douyin/service/serviceimpl"
+	"douyin/util/webutil"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 )
 
 var favoriteService = serviceimpl.NewFavoriteServiceInstance()
@@ -21,13 +22,16 @@ func Like(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(&favorite)
 
 	if err != nil {
-		ctx.String(http.StatusBadRequest, "参数错误 %v", GetValidMsg(err, favorite))
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"status_msg":  fmt.Sprintf("参数错误 %v", webutil.GetValidMsg(err, favorite)),
+		})
 		return
 	}
 	err = favoriteService.Like(&favorite)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status_code": http.StatusBadRequest,
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status_code": http.StatusInternalServerError,
 			"status_msg":  err.Error(),
 		})
 		return
@@ -40,11 +44,22 @@ func Like(ctx *gin.Context) {
 
 // FavoriteList 	查看点赞列表
 func FavoriteList(ctx *gin.Context) {
-	user_id, _ := strconv.Atoi(ctx.Query("user_id"))
-	videoList, err := favoriteService.FavoriteList(user_id)
+	var favoriteListParam param.FavoriteList
+
+	err := ctx.ShouldBindQuery(&favoriteListParam)
+
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"status_code": http.StatusBadRequest,
+			"status_msg":  fmt.Sprintf("参数错误 %v", webutil.GetValidMsg(err, favoriteListParam)),
+		})
+		return
+	}
+
+	videoList, err := favoriteService.FavoriteList(favoriteListParam.UserId)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"status_code": http.StatusInternalServerError,
 			"status_msg":  err.Error(),
 		})
 		return
