@@ -10,7 +10,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"net/http"
 	"reflect"
-	"strconv"
 )
 
 // Comment 			评论
@@ -30,11 +29,12 @@ func Comment(ctx *gin.Context) {
 
 // CommentList 		查看评论列表
 func CommentList(ctx *gin.Context) {
-	videoId, err := strconv.Atoi(ctx.Query("video_id"))
+	var commentListParam param.CommentList
+	err := ctx.ShouldBindQuery(&commentListParam)
 	if err != nil {
-		ctx.String(http.StatusBadRequest, "参数错误")
+		ctx.String(http.StatusBadRequest, "参数错误 %v", GetValidMsg(err, commentListParam))
 	}
-	commentList, err := serviceimpl.NewCommentServiceInstance().CommentList(videoId)
+	commentList, err := serviceimpl.NewCommentServiceInstance().CommentList(&commentListParam)
 	ctx.JSON(http.StatusOK, commentList)
 }
 
