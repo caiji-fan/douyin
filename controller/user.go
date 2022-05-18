@@ -6,9 +6,9 @@ package controller
 import (
 	"douyin/entity/param"
 	"douyin/service/serviceimpl"
+	"douyin/util/webutil"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 )
 
 // Register 		用户注册
@@ -18,23 +18,22 @@ func Register(context *gin.Context) {
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"status_code": -1,
-			"status_msg":  GetValidMsg(err, user),
-			//"status_msg": err.Error(),
-			"user_id": 0,
-			"token":   "",
+			"status_msg":  webutil.GetValidMsg(err, user),
+			"user_id":     0,
+			"token":       "",
 		})
 		return
 	}
 	userid, token, err := serviceimpl.NewUserService().Register(user)
 	if err != nil { //注册失败
-		context.JSON(406, gin.H{
+		context.JSON(http.StatusInternalServerError, gin.H{
 			"status_code": "2",
 			"status_msg":  err.Error(),
 			"user_id":     userid,
 			"token":       token,
 		})
 	} else { //注册成功
-		context.JSON(200, gin.H{
+		context.JSON(http.StatusOK, gin.H{
 			"status_code": 0,
 			"status_msg":  "注册成功",
 			"user_id":     userid,
@@ -50,10 +49,9 @@ func Login(context *gin.Context) {
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"status_code": -1,
-			"status_msg":  GetValidMsg(err, user),
-			//"status_msg": err.Error(),
-			"user_id": 0,
-			"token":   "",
+			"status_msg":  webutil.GetValidMsg(err, user),
+			"user_id":     0,
+			"token":       "",
 		})
 		return
 	}
@@ -77,10 +75,17 @@ func Login(context *gin.Context) {
 
 // UserInfo 		查看用户信息
 func UserInfo(context *gin.Context) {
-	userId := context.Query("user_id")
-	id, _ := strconv.Atoi(userId)
-
-	user, err := serviceimpl.NewUserService().UserInfo(id)
+	var userInfoParam param.UserInfo
+	err := context.ShouldBindQuery(&userInfoParam)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"status_code": -1,
+			"status_msg":  webutil.GetValidMsg(err, userInfoParam),
+			"user":        nil,
+		})
+		return
+	}
+	user, err := serviceimpl.NewUserService().UserInfo(userInfoParam.UserId)
 	if err != nil {
 		context.JSON(405, gin.H{
 			"status_code": 1,

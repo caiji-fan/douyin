@@ -24,5 +24,5 @@ type User interface {
 	// UserInfo 	查看用户信息
 	// userId 		用户id
 	// @return 		用户信息
-	UserInfo(userId int) (bo.User, error)
+	UserInfo(userId int) (*bo.User, error)
 }

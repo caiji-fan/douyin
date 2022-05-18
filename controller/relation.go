@@ -6,9 +6,10 @@ package controller
 import (
 	"douyin/entity/param"
 	"douyin/service/serviceimpl"
+	"douyin/util/webutil"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 )
 
 var relationService = serviceimpl.NewRelationServiceInstance()
@@ -21,7 +22,10 @@ func Follow(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(&relation)
 
 	if err != nil {
-		ctx.String(http.StatusBadRequest, "参数错误 %v", GetValidMsg(err, relation))
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"status_msg":  fmt.Sprintf("参数错误 %v", webutil.GetValidMsg(err, relation)),
+		})
 		return
 	}
 
@@ -41,12 +45,22 @@ func Follow(ctx *gin.Context) {
 
 // FollowList 	查看关注列表
 func FollowList(ctx *gin.Context) {
-	user_id, _ := strconv.Atoi(ctx.Query("user_id"))
-	userList, err := relationService.FollowList(user_id)
+	var followListParam param.FollowList
+	err := ctx.ShouldBindQuery(&followListParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"status_msg":  fmt.Sprintf("参数错误 %v", webutil.GetValidMsg(err, followListParam)),
+			"user_list":   nil,
+		})
+		return
+	}
+	userList, err := relationService.FollowList(followListParam.UserID)
 	if err != nil {
 		ctx.JSON(http.StatusForbidden, gin.H{
 			"status_code": http.StatusForbidden,
 			"status_msg":  err.Error(),
+			"user_list":   nil,
 		})
 		return
 	}
@@ -60,12 +74,22 @@ func FollowList(ctx *gin.Context) {
 
 // FansList 	查看粉丝列表
 func FansList(ctx *gin.Context) {
-	user_id, _ := strconv.Atoi(ctx.Query("user_id"))
-	userList, err := relationService.FansList(user_id)
+	var followListParam param.FollowList
+	err := ctx.ShouldBindQuery(&followListParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"status_msg":  fmt.Sprintf("参数错误 %v", webutil.GetValidMsg(err, followListParam)),
+			"user_list":   nil,
+		})
+		return
+	}
+	userList, err := relationService.FollowList(followListParam.UserID)
 	if err != nil {
 		ctx.JSON(http.StatusForbidden, gin.H{
 			"status_code": http.StatusForbidden,
 			"status_msg":  err.Error(),
+			"user_list":   nil,
 		})
 		return
 	}

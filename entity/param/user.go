@@ -8,3 +8,7 @@ type User struct {
 	UserName string `form:"username" binding:"required" msg:"无效的用户名"`
 	Password string `form:"password"  binding:"gte=6" msg:"密码格式不正确"`
 }
+
+type UserInfo struct {
+	UserId int `form:"user_id" binding:"required" msg:"无效的用户标识"`
+}
