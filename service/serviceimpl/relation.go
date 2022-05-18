@@ -81,14 +81,6 @@ func (r Relation) FansList(userId int) ([]bo.User, error) {
 	return *busers, nil
 }
 
-func (r Relation) IsFollow(followId int, followerId int) (bool, error) {
-	flag, err := relationDao.QueryByCondition(followId, followerId)
-	if err != nil {
-		return false, err
-	}
-	return flag, err
-}
-
 var (
 	relationDao  = daoimpl.NewRelationDaoInstance()
 	relation     service.Relation

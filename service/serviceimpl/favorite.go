@@ -104,11 +104,14 @@ func (f Favorite) FavoriteList(userId int) ([]bo.Video, error) {
 }
 
 func (f Favorite) IsFavorite(videoId int, userId int) (bool, error) {
-	flag, err := favoriteDao.QueryByCondition(videoId, userId)
+	favorites, err := favoriteDao.QueryByCondition(&po.Favorite{VideoId: videoId, UserId: userId})
 	if err != nil {
 		return false, err
 	}
-	return flag, err
+	if len(*favorites) > 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 var (

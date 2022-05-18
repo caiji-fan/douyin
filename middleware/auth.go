@@ -8,63 +8,106 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // JWTAuth jwt鉴权
 func JWTAuth(ctx *gin.Context) {
+	var err error
+	var tokenString string
+	var userId int
+	//判断投稿接口
+	path := ctx.Request.URL.Path
+	flag := strings.Contains(path, "/douyin/publish/action")
+	if flag {
+		//投稿接口 通过form-data获取token
+		tokenString = ctx.PostForm("token")
+	} else {
+		//获取参数userId
+		userId, err = getUserId(ctx)
+		if err != nil {
+			ctx.Abort()
+			return
+		}
+		//获取token
+		tokenString = ctx.Query("token")
+	}
+	//解析token
+	err, uid := parseToken(ctx, tokenString)
+	if err != nil {
+		ctx.Abort()
+		return
+	}
+	//从redis判断token是否有效
+	err = tokenValid(ctx, userId)
+	if err != nil {
+		ctx.Abort()
+		return
+	}
+	//对比两个id是否一致 (投稿接口不需要此判断)
+	if !flag {
+		err = equalId(ctx, userId, uid)
+		if err != nil {
+			ctx.Abort()
+			return
+		}
+	} else {
+		//投稿接口存入uid方便后续操作
+		ctx.Set("userId", uid)
+	}
+	//继续执行下面的程序
+	ctx.Next()
+}
 
-	//获取参数user_id
-	userId, err1 := strconv.Atoi(ctx.Query("user_id"))
-	if err1 != nil {
+//获取参数user_Id
+func getUserId(ctx *gin.Context) (int, error) {
+	userId, err := strconv.Atoi(ctx.Query("user_id"))
+	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"status_code": http.StatusBadRequest,
 			"status_msg":  "未传入user_id",
 		})
-		ctx.Abort()
-		return
 	}
-	tokenString := ctx.Query("token")
-	if tokenString == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status_code": http.StatusBadRequest,
-			"status_msg":  "未传入token",
-		})
-		//停止
-		ctx.Abort()
-		return
-	}
+	return userId, err
+}
+
+//解析token
+func parseToken(ctx *gin.Context, token string) (error, int) {
 	//解析出token中的用户id
-	uid, err2 := jwtutil.ParseJWT(tokenString)
-	if err2 != nil {
+	uid, err := jwtutil.ParseJWT(token)
+	if err != nil {
 		//token过期
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"status_code": http.StatusBadRequest,
-			"status_msg":  "token已过期",
+			"status_msg":  "token已过期/未获取到token参数",
 		})
-		ctx.Abort()
-		return
 	}
-	//TODO 查询redis中是否存在token并和此token对比是否一致
-	//_, err3 := redis.GetString(tokenString)
-	//if err3 != nil {
-	//	ctx.JSON(http.StatusBadRequest, gin.H{
-	//		"status_code": http.StatusBadRequest,
-	//		"status_msg":  "redis中token不存在",
-	//	})
-	//	ctx.Abort()
-	//	return
-	//}
+	return err, uid
+}
 
-	//对比两个id是否一致
-	if uid != userId {
+//判断redis中token是否有效
+func tokenValid(ctx *gin.Context, userId int) error {
+	var redis_token string
+	err := redisutil.Get(config.Config.Redis.Key.Token+strconv.Itoa(userId), &redis_token)
+	if err != nil || redis_token == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"status_msg":  "redis中token不存在",
+		})
+		return errors.New("redis中token不存在")
+	}
+	return err
+}
+
+//判断两个id是否一致
+func equalId(ctx *gin.Context, userId int, uId int) error {
+	if userId != uId {
 		//id不一致
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"status_code": http.StatusBadRequest,
 			"status_msg":  "无权限",
 		})
-		ctx.Abort()
-		return
+		return errors.New("id不一致")
 	}
-	//继续执行下面的程序
-	ctx.Next()
+	return nil
 }
