@@ -25,10 +25,4 @@ type Relation interface {
 	// userId 		用户id
 	// @return 		粉丝用户列表
 	FansList(userId int) ([]bo.User, error)
-
-	//IsFollow					查询登录用户是否关注此用户
-	//followId					此用户id
-	//followerId 				登录用户id
-	//@return 					结果true/false
-	IsFollow(followId int, followerId int) (bool, error)
 }

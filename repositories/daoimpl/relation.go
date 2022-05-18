@@ -24,25 +24,36 @@ func (r Relation) Insert(follow *po.Follow) error {
 func (r Relation) DeleteByCondition(follow *po.Follow) error {
 	followId := follow.FollowId
 	followerId := follow.FollowerId
-	result := db.Where("follow_id = ? and follower_id = ?", followId, followerId).Delete(&po.Follow{})
-	err := result.Error
+	db1 := db
+	if followId != 0 {
+		db1 = db1.Where("follow_id = ?", followId)
+	}
+	if followerId != 0 {
+		db1 = db1.Where("follower_id = ?", followerId)
+	}
+	err := db1.Delete(&po.Follow{}).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r Relation) QueryByCondition(followId int, followerId int) (bool, error) {
-	result := db.Where("follow_id = ? and follower_id = ?", followId, followerId).Find(&po.Follow{})
-	err := result.Error
+func (r Relation) QueryByCondition(follow *po.Follow) (*[]po.Follow, error) {
+	followId := follow.FollowId
+	followerId := follow.FollowerId
+	db1 := db
+	if followId != 0 {
+		db1 = db1.Where("follow_id = ?", followId)
+	}
+	if followerId != 0 {
+		db1 = db1.Where("follower_id = ?", followerId)
+	}
+	var follows []po.Follow
+	err := db1.Find(&follows).Error
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	if result.RowsAffected > 0 {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	return &follows, nil
 }
 
 func (r Relation) QueryFollowIdByFansId(fansId int) ([]int, error) {

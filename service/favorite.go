@@ -17,10 +17,4 @@ type Favorite interface {
 	// FavoriteList 	点赞列表
 	// userId 			用户id
 	FavoriteList(userId int) ([]bo.Video, error)
-
-	// IsFavorite				查询用户是否点赞视频
-	// videoId					视频id
-	// userId					用户id
-	// @return 					结果true/false
-	IsFavorite(videoId int, userId int) (bool, error)
 }

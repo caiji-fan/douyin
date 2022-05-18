@@ -22,9 +22,8 @@ type Favorite interface {
 	// favorite					删除条件
 	DeleteByCondition(favorite *po.Favorite) error
 
-	// QueryByCondition			查询用户是否点赞视频
-	// videoId					视频id
-	// userId					用户id
-	// @return 					结果true/false
-	QueryByCondition(videoId int, userId int) (bool, error)
+	// QueryByCondition			条件查询
+	// favorite					查询条件
+	// @return 					favorite集合
+	QueryByCondition(favorite *po.Favorite) (*[]po.Favorite, error)
 }
