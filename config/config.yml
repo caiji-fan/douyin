@@ -72,9 +72,11 @@ obs:
   location: "cn-north-4"
   buckets:
     video: "dy-video"
+thread-local:
+  keys:
+    user-id: "user_id"
 service:
   # 标识大v的粉丝数
   big-v-num: 1000000
   # 临时路径
   temp-dir: ""
-
