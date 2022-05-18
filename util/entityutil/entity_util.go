@@ -14,9 +14,9 @@ import (
 // src				评论PO集
 // dest 			评论bo集
 func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
-	var i int = 0
-	var ids []int = make([]int, len(*src), len(*src)*4)
-	var cu map[int][]*po.Comment = make(map[int][]*po.Comment, len(*src))
+	var i = 0
+	var ids = make([]int, len(*src), len(*src)*4)
+	var cu = make(map[int][]*po.Comment, len(*src))
 	//key是po数据库用户id,value是对应的po评论实体切片(一个用户可能评论了多次)
 	for _, sr := range *src {
 		//用地址可以更省空间，但是也容易出错
@@ -31,16 +31,19 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 	if err != nil {
 		return err
 	}
-	for _, pouser := range *userList {
-		c1s := cu[pouser.ID]
+	for _, userPo := range *userList {
+		c1s := cu[userPo.ID]
 		//将po数据库user转换为bo业务user
-		var bouser bo.User = bo.User{}
+		var userBo = bo.User{}
 		//通过下面的自定义方法进行
-		GetUserBO(&pouser, &bouser)
+		err := GetUserBO(&userPo, &userBo)
+		if err != nil {
+			return err
+		}
 		for _, c1 := range c1s {
 			commentBo := bo.Comment{
 				ID:         c1.ID,  //bo评论id
-				User:       bouser, //bo业务user对象
+				User:       userBo, //bo业务user对象
 				Content:    c1.Content,
 				CreateDate: c1.CreateTime,
 			}
@@ -54,8 +57,8 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 // src				视频PO集
 // dest				视频BO集
 func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
-	var ids []int = make([]int, len(*src), len(*src)*4)
-	var cu map[int][]*po.Video = make(map[int][]*po.Video, len(*src))
+	var ids = make([]int, len(*src), len(*src)*4)
+	var cu = make(map[int][]*po.Video, len(*src))
 	//key是作者id,value是视频切片
 	//因为一个作者可能有多个作品，所以同上评论一样
 	for i, sr := range *src {
@@ -70,16 +73,19 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 	if err != nil {
 		return err
 	}
-	for _, pouser := range *userList {
-		c1s := cu[pouser.ID]
+	for _, userPo := range *userList {
+		c1s := cu[userPo.ID]
 		//将po数据库user转换为bo业务user
-		var bouser bo.User = bo.User{}
+		var userBo = bo.User{}
 		//通过下面的自定义方法进行
-		GetUserBO(&pouser, &bouser)
+		err := GetUserBO(&userPo, &userBo)
+		if err != nil {
+			return err
+		}
 		for _, c1 := range c1s {
 			videoBo := bo.Video{
 				ID:            c1.ID,
-				Author:        bouser,
+				Author:        userBo,
 				PlayUrl:       c1.PlayUrl,
 				CoverUrl:      c1.CoverUrl,
 				FavoriteCount: c1.FavoriteCount,
