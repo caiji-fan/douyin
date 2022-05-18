@@ -22,8 +22,8 @@ func (f Favorite) Insert(favorite *po.Favorite) error {
 }
 
 func (f Favorite) QueryVideoIdsByUserId(userId int) ([]int, error) {
-	videoIds := []int{}
-	favorites := []po.Favorite{}
+	var videoIds []int
+	var favorites []po.Favorite
 	result := db.Select("video_id").Where("user_id = ?", userId).Order("create_time desc").Find(&favorites)
 	err := result.Error
 	if err != nil {

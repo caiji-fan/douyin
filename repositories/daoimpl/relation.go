@@ -46,8 +46,8 @@ func (r Relation) QueryByCondition(followId int, followerId int) (bool, error) {
 }
 
 func (r Relation) QueryFollowIdByFansId(fansId int) ([]int, error) {
-	userIds := []int{}
-	follows := []po.Follow{}
+	var userIds []int
+	var follows []po.Follow
 	result := db.Select("follow_id").Where("follower_id = ?", fansId).Order("create_time desc").Find(&follows)
 	err := result.Error
 	if err != nil {
@@ -60,8 +60,8 @@ func (r Relation) QueryFollowIdByFansId(fansId int) ([]int, error) {
 }
 
 func (r Relation) QueryFansIdByFollowId(followId int) ([]int, error) {
-	userIds := []int{}
-	follows := []po.Follow{}
+	var userIds []int
+	var follows []po.Follow
 	result := db.Select("follower_id").Where("follow_id = ?", followId).Order("create_time desc").Find(&follows)
 	err := result.Error
 	if err != nil {

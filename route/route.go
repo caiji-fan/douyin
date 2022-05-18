@@ -4,6 +4,7 @@
 package route
 
 import (
+	"douyin/config"
 	"douyin/controller"
 	"douyin/middleware"
 	"github.com/gin-gonic/gin"
@@ -13,7 +14,7 @@ import (
 func InitRoute() *gin.Engine {
 	route := gin.Default()
 
-	withAUTH := route.Group("douyin", middleware.JWTAuth)
+	withAUTH := route.Group(config.Config.Server.Name, middleware.JWTAuth)
 	user1 := withAUTH.Group("user")
 	{
 		user1.GET("", controller.UserInfo)
@@ -40,7 +41,7 @@ func InitRoute() *gin.Engine {
 		relation.POST("action", controller.Follow)
 	}
 
-	withoutAUTH := route.Group("douyin")
+	withoutAUTH := route.Group(config.Config.Server.Name)
 	withoutAUTH.GET("feed", controller.Feed)
 	user2 := withoutAUTH.Group("user")
 	{

@@ -18,7 +18,7 @@ var (
 	userOnce sync.Once
 )
 
-//单例模式，下次使用如果有这个实例就用这个实例，没有时再创建
+// NewUserDaoInstance 单例模式，下次使用如果有这个实例就用这个实例，没有时再创建
 func NewUserDaoInstance() repositories.User {
 	userOnce.Do(func() {
 		user = UserImpl{}
