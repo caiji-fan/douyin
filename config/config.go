@@ -11,12 +11,13 @@ import (
 
 // Config 配置信息
 type config struct {
-	DB      database `yaml:"database"`
-	Redis   redis    `yaml:"redis"`
-	Rabbit  rabbit   `yaml:"rabbit"`
-	Server  server   `yaml:"server"`
-	Obs     obs      `yaml:"obs"`
-	Service service  `yaml:"service"`
+	DB          database    `yaml:"database"`
+	Redis       redis       `yaml:"redis"`
+	Rabbit      rabbit      `yaml:"rabbit"`
+	Server      server      `yaml:"server"`
+	Obs         obs         `yaml:"obs"`
+	Service     service     `yaml:"service"`
+	ThreadLocal threadLocal `yaml:"thread-local"`
 }
 
 // Config 全局配置实例

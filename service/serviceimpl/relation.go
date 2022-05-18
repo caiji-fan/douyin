@@ -45,40 +45,40 @@ func (r Relation) Follow(relationParam *param.Relation) error {
 	return nil
 }
 
-func (r Relation) FollowList(userId int) ([]bo.User, error) {
+func (r Relation) FollowList(userId int) (*[]bo.User, error) {
 	usersId, err := relationDao.QueryFollowIdByFansId(userId)
 	if err != nil {
 		return nil, err
 	}
-	var pusers *[]po.User
-	pusers, err = daoimpl.NewUserDaoInstance().QueryBatchIds(&usersId)
+	var userPOS *[]po.User
+	userPOS, err = daoimpl.NewUserDaoInstance().QueryBatchIds(&usersId)
 	if err != nil {
 		return nil, err
 	}
-	var busers *[]bo.User
-	err = entityutil.GetUserBO(pusers, busers)
+	var userBOS *[]bo.User
+	err = entityutil.GetUserBOS(userPOS, userBOS)
 	if err != nil {
 		return nil, err
 	}
-	return *busers, nil
+	return userBOS, nil
 }
 
-func (r Relation) FansList(userId int) ([]bo.User, error) {
+func (r Relation) FansList(userId int) (*[]bo.User, error) {
 	usersId, err := relationDao.QueryFansIdByFollowId(userId)
 	if err != nil {
 		return nil, err
 	}
-	var pusers *[]po.User
-	pusers, err = daoimpl.NewUserDaoInstance().QueryBatchIds(&usersId)
+	var userPOS *[]po.User
+	userPOS, err = daoimpl.NewUserDaoInstance().QueryBatchIds(&usersId)
 	if err != nil {
 		return nil, err
 	}
-	var busers *[]bo.User
-	err = entityutil.GetUserBO(pusers, busers)
+	var userBOS *[]bo.User
+	err = entityutil.GetUserBOS(userPOS, userBOS)
 	if err != nil {
 		return nil, err
 	}
-	return *busers, nil
+	return userBOS, nil
 }
 
 var (

@@ -14,7 +14,7 @@ import (
 func InitRoute() *gin.Engine {
 	route := gin.Default()
 
-	withAUTH := route.Group(config.Config.Server.Name, middleware.JWTAuth)
+	withAUTH := route.Group(config.Config.Server.Name, middleware.JWTAuth, middleware.SaveUserId)
 	user1 := withAUTH.Group("user")
 	{
 		user1.GET("", controller.UserInfo)

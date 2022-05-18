@@ -19,10 +19,10 @@ type Relation interface {
 	// FollowList 	查看关注列表
 	// userId 		用户id
 	// @return 		关注的用户列表
-	FollowList(userId int) ([]bo.User, error)
+	FollowList(userId int) (*[]bo.User, error)
 
 	// FansList 	查看粉丝列表
 	// userId 		用户id
 	// @return 		粉丝用户列表
-	FansList(userId int) ([]bo.User, error)
+	FansList(userId int) (*[]bo.User, error)
 }
