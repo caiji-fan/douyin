@@ -30,7 +30,6 @@ func Init() {
 		log.Fatalf("连接池初始化错误 %v", err)
 		return
 	}
-
 	// 连接池配置
 	pool.SetConnMaxIdleTime(dbConf.Pool.ConnMaxIdleTime)
 	pool.SetMaxOpenConns(dbConf.Pool.MaxOpenConn)

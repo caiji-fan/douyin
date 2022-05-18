@@ -7,11 +7,6 @@ package main
 import (
 	"douyin/config"
 	"douyin/repositories/daoimpl"
-	route2 "douyin/route"
-	"douyin/util/rabbitutil"
-	"github.com/gin-gonic/gin"
-	"log"
-	"strconv"
 )
 
 var route *gin.Engine

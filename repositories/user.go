@@ -12,7 +12,7 @@ import (
 type User interface {
 	// Insert 			插入一条数据
 	// user  			用户数据
-	Insert(user *po.User) error
+	Insert(tx *gorm.DB, isTx bool, user *po.User) (int, error)
 
 	// QueryById 		通过id查询
 	// userId 			用户id
@@ -36,4 +36,8 @@ type User interface {
 	UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error
 
 	Begin() (tx *gorm.DB)
+	// QueryByName		通过已有的属性查询
+	// user				用户
+	// @return 			用户切片
+	QueryByCondition(user *po.User) (*[]po.User, error)
 }

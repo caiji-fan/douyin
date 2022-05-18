@@ -11,5 +11,5 @@ type Video struct {
 	CoverUrl      string `json:"cover_url"`
 	FavoriteCount int    `json:"favorite_count"`
 	CommentCount  int    `json:"comment_count"`
-	isFavorite    bool   `json:"is_favorite"`
+	IsFavorite    bool   `json:"is_favorite"`
 }

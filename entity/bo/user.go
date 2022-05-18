@@ -9,5 +9,5 @@ type User struct {
 	Name          string `json:"name"`
 	FollowCount   int    `json:"follow_count"`
 	FollowerCount int    `json:"follower_count"`
-	isFollow      bool   `json:"is_follow"`
+	IsFollow      bool   `json:"is_follow"`
 }

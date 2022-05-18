@@ -7,7 +7,7 @@ server:
 # 数据库连接信息
 database:
   # 连接url
-  dsn: "root:curry@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "root:12345ssdlh@tcp(124.70.84.192:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
   # 连接池参数
   pool:
     # 最长空闲时间
