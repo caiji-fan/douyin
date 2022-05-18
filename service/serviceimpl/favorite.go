@@ -17,21 +17,69 @@ type Favorite struct {
 }
 
 func (f Favorite) Like(favoriteParam *param.Favorite) error {
+
+	var err error
+	tx := daoimpl.NewVideoDaoInstance().Begin()
+
 	userId := favoriteParam.UserID
 	videoId := favoriteParam.VideoID
 	actionType := favoriteParam.ActionType
 	if actionType == 1 {
-		err := favoriteDao.Insert(&po.Favorite{VideoId: videoId, UserId: userId})
+		wait := sync.WaitGroup{}
+		wait.Add(2)
+		//点赞视频
+		go func() {
+			defer wait.Done()
+			err = favoriteDao.Insert(&po.Favorite{VideoId: videoId, UserId: userId})
+			if err != nil {
+				return
+			}
+		}()
+		//增加视频点赞数
+		go func() {
+			defer wait.Done()
+			var video *po.Video
+			video, err = daoimpl.NewVideoDaoInstance().QueryForUpdate(videoId)
+			if err != nil {
+				return
+			}
+			video.FavoriteCount = video.FavoriteCount + 1
+			err = daoimpl.NewVideoDaoInstance().UpdateByCondition(video, tx, true)
+		}()
+		wait.Wait()
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
-		//TODO 异步 更新视频的点赞数
+		tx.Commit()
 	} else if actionType == 2 {
-		err := favoriteDao.DeleteByCondition(&po.Favorite{VideoId: videoId, UserId: userId})
+		wait := sync.WaitGroup{}
+		wait.Add(2)
+		//取消点赞视频
+		go func() {
+			defer wait.Done()
+			err = favoriteDao.DeleteByCondition(&po.Favorite{VideoId: videoId, UserId: userId})
+			if err != nil {
+				return
+			}
+		}()
+		//减少视频点赞数
+		go func() {
+			defer wait.Done()
+			var video *po.Video
+			video, err = daoimpl.NewVideoDaoInstance().QueryForUpdate(videoId)
+			if err != nil {
+				return
+			}
+			video.FavoriteCount = video.FavoriteCount - 1
+			err = daoimpl.NewVideoDaoInstance().UpdateByCondition(video, tx, true)
+		}()
+		wait.Wait()
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
-		//TODO 异步 更新视频的点赞数
+		tx.Commit()
 	}
 	return nil
 }

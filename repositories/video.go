@@ -5,6 +5,7 @@ package repositories
 
 import (
 	"douyin/entity/po"
+	"gorm.io/gorm"
 )
 
 // Video 视频持久层接口
@@ -35,5 +36,12 @@ type Video interface {
 
 	// UpdateByCondition 			条件更新
 	// video						更新条件
-	UpdateByCondition(video *po.Video) error
+	UpdateByCondition(video *po.Video, tx *gorm.DB, isTx bool) error
+
+	// QueryForUpdate 	加锁查询
+	// videoId  		视频id
+	// @return			视频数据
+	QueryForUpdate(videoId int) (*po.Video, error)
+
+	Begin() (tx *gorm.DB)
 }
