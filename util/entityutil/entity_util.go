@@ -91,8 +91,11 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 				FavoriteCount: c1.FavoriteCount,
 				CommentCount:  c1.CommentCount,
 				//TODO 查询dy_favorite表才可得出关系，这里先默认true
+
 				IsFavorite: true,
+				Title:      c1.Title,
 			}
+
 			*dest = append(*dest, videoBo)
 		}
 	}

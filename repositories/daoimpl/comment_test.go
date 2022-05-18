@@ -4,7 +4,6 @@
 package daoimpl
 
 import (
-	"douyin/config"
 	"douyin/entity/po"
 	"fmt"
 	"log"
@@ -68,12 +67,4 @@ func TestComment_UpdateByCondition(t *testing.T) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-}
-
-func TestMain(t *testing.M) {
-	// 配置文件初始化
-	config.Init()
-	// 数据库初始化
-	Init()
-	t.Run()
 }
