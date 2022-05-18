@@ -5,9 +5,12 @@
 package entityutil
 
 import (
+	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/po"
+	"douyin/middleware"
 	"douyin/repositories/daoimpl"
+	"strconv"
 )
 
 // GetCommentBOS 	获取评论BO实例集
@@ -90,12 +93,20 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 				CoverUrl:      c1.CoverUrl,
 				FavoriteCount: c1.FavoriteCount,
 				CommentCount:  c1.CommentCount,
-				//TODO 查询dy_favorite表才可得出关系，这里先默认true
-
-				IsFavorite: true,
-				Title:      c1.Title,
+				Title:         c1.Title,
 			}
-
+			user_id := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+			uid, _ := strconv.Atoi(user_id)
+			var fav po.Favorite = po.Favorite{
+				VideoId: c1.ID,
+				UserId:  uid,
+			}
+			favo, _ := daoimpl.NewFavoriteDaoInstance().QueryByCondition(&fav)
+			if favo == nil {
+				videoBo.IsFavorite = false
+			} else {
+				videoBo.IsFavorite = true
+			}
 			*dest = append(*dest, videoBo)
 		}
 	}
@@ -128,9 +139,17 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 	(*dest).Name = (*src).Name
 	(*dest).FollowCount = (*src).FollowCount
 	(*dest).FollowerCount = (*src).FollowerCount
-	//TODO 处理IsFollow
-	//调用repositories中的relation.go中的方法通过pouserID或者bouserID查询是否有关系
-	//这里先写固定值
-	(*dest).IsFollow = false
+	user_id := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	uid, _ := strconv.Atoi(user_id)
+	var pof po.Follow = po.Follow{
+		FollowId:   uid,
+		FollowerId: (*src).ID,
+	}
+	pofs, _ := daoimpl.NewRelationDaoInstance().QueryByCondition(&pof)
+	if pofs == nil {
+		(*dest).IsFollow = false
+	} else {
+		(*dest).IsFollow = true
+	}
 	return nil
 }
