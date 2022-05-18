@@ -34,6 +34,7 @@ func JWTAuth(ctx *gin.Context) {
 		//获取token
 		tokenString = ctx.Query("token")
 	}
+
 	//解析token
 	err, uid := parseToken(ctx, tokenString)
 	if err != nil {
@@ -50,10 +51,9 @@ func JWTAuth(ctx *gin.Context) {
 		if err != nil {
 			return
 		}
-	} else {
-		//投稿接口存入uid方便后续操作
-		ctx.Set("userId", uid)
 	}
+	//投稿接口存入uid，供线程变量中间件操作
+	ctx.Set(config.Config.ThreadLocal.Keys.UserId, uid)
 	//继续执行下面的程序
 	ctx.Next()
 }

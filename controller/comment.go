@@ -15,6 +15,7 @@ import (
 // Comment 			评论
 func Comment(ctx *gin.Context) {
 	var commentParam param.Comment
+
 	err := ctx.ShouldBindQuery(&commentParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{

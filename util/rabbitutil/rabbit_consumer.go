@@ -248,7 +248,7 @@ func doUploadVideo(videoId int) error {
 		return err
 	}
 	// 更新数据库
-	err = daoimpl.NewVideoDaoInstance().UpdateByCondition(video)
+	err = daoimpl.NewVideoDaoInstance().UpdateByCondition(video, nil, false)
 	if err != nil {
 		return err
 	}
