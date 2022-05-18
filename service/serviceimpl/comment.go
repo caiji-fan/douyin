@@ -63,7 +63,7 @@ func validVideoExistence(videoId int) error {
 	return nil
 }
 
-func (c Comment) CommentList(videoId int) (*[]bo.Comment, error) {
+func (c Comment) CommentList(commentListParam *param.CommentList) (*[]bo.Comment, error) {
 	//todo 校验视频是否存在
 	// 校验
 	//err := validVideoExistence(videoId)
@@ -73,7 +73,7 @@ func (c Comment) CommentList(videoId int) (*[]bo.Comment, error) {
 	// 查询
 	commentDao := daoimpl.NewCommentDaoInstance()
 	var comment = new(po.Comment)
-	comment.VideoId = videoId
+	comment.VideoId = commentListParam.VideoId
 	comments, err := commentDao.QueryByCondition(comment)
 	if err != nil {
 		return nil, err

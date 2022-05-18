@@ -16,3 +16,8 @@ type Comment struct {
 	UserId      int    `form:"user_id"`
 	CommentId   int    `form:"comment_id"`
 }
+
+// CommentList 查询评论列表
+type CommentList struct {
+	VideoId int `form:"video_id" binding:"required" msg:"无效的参数"`
+}
