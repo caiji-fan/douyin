@@ -55,7 +55,7 @@ func TestRelationDaoImpl_QueryFansIdByFollowId(t *testing.T) {
 }
 func TestRelationDaoImpl_QueryByCondition(t *testing.T) {
 	relationDao := NewRelationDaoInstance()
-	follows, err := relationDao.QueryByCondition(&po.Follow{FollowId: 1, FollowerId: 2})
+	follows, err := relationDao.QueryByCondition(&po.Follow{FollowId: 99, FollowerId: 98})
 	if err != nil {
 		fmt.Println(err)
 	}
