@@ -58,6 +58,7 @@ func bucketIsExist(bucketName string, client *obs.ObsClient) (bool, error) {
 				return false, nil
 			} else {
 				log.Printf("StatusCode:%d\n", obsError.StatusCode)
+				return false, nil
 			}
 		} else {
 			log.Println(err)

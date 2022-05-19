@@ -67,9 +67,9 @@ func (UserImpl) QueryByCondition(user *po.User) (*[]po.User, error) {
 }
 func (i UserImpl) QueryForUpdate(userId int) (*po.User, error) {
 	db1 := db
-	var pouser po.User
-	err := db1.Raw("SELECT id,`name`,follow_count,follower_count,`password`,create_time,update_time FROM dy_user WHERE id=? FOR UPDATE", userId).Scan(&pouser).Error
-	return &pouser, err
+	var poUser po.User
+	err := db1.Raw("SELECT id,`name`,follow_count,follower_count,`password`,create_time,update_time FROM dy_user WHERE id=? FOR UPDATE", userId).Scan(&poUser).Error
+	return &poUser, err
 }
 func (i UserImpl) UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error {
 	var client *gorm.DB

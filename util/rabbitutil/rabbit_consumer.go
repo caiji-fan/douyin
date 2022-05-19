@@ -95,6 +95,7 @@ func uploadVideoConsumer() {
 
 //错误处理
 func failOnError(err error, rabbitMSG *bo.RabbitMSG) {
+	//todo 重发过量
 	if err != nil {
 		handleError(rabbitMSG)
 		log.Println(err)

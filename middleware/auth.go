@@ -41,7 +41,7 @@ func JWTAuth(ctx *gin.Context) {
 		return
 	}
 	//从redis判断token是否有效
-	err = tokenValid(ctx, userId)
+	err = tokenValid(ctx, uid)
 	if err != nil {
 		return
 	}

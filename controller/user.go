@@ -24,19 +24,19 @@ func Register(context *gin.Context) {
 		})
 		return
 	}
-	userid, token, err := serviceimpl.NewUserService().Register(user)
+	userId, token, err := serviceimpl.NewUserService().Register(user)
 	if err != nil { //注册失败
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"status_code": "2",
 			"status_msg":  err.Error(),
-			"user_id":     userid,
+			"user_id":     userId,
 			"token":       token,
 		})
 	} else { //注册成功
 		context.JSON(http.StatusOK, gin.H{
 			"status_code": 0,
 			"status_msg":  "注册成功",
-			"user_id":     userid,
+			"user_id":     userId,
 			"token":       token,
 		})
 	}
@@ -55,19 +55,19 @@ func Login(context *gin.Context) {
 		})
 		return
 	}
-	userid, token, err := serviceimpl.NewUserService().Login(user)
+	userId, token, err := serviceimpl.NewUserService().Login(user)
 	if err != nil { //登录失败
 		context.JSON(407, gin.H{
 			"status_code": 2,
 			"status_msg":  err.Error(),
-			"user_id":     userid,
+			"user_id":     userId,
 			"token":       token,
 		})
 	} else { //登录成功
 		context.JSON(200, gin.H{
 			"status_code": 0,
 			"status_msg":  "登录成功",
-			"user_id":     userid,
+			"user_id":     userId,
 			"token":       token,
 		})
 	}

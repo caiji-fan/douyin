@@ -21,5 +21,4 @@ func SaveUserId(ctx *gin.Context) {
 		ctx.Next()
 		ThreadLocal.Remove()
 	}
-
 }
