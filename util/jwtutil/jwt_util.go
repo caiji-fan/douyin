@@ -42,7 +42,7 @@ func ParseJWT(token string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	//interface{}中数值类型默认为float64
+	//jwt中数值类型默认为float64
 	id := tokenOriginal.Claims.(jwt.MapClaims)["id"].(float64)
 	//返回int类型的id
 	return int(id), nil

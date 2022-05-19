@@ -20,7 +20,6 @@ func (f Favorite) Like(favoriteParam *param.Favorite) error {
 
 	var err error
 	tx := daoimpl.NewVideoDaoInstance().Begin()
-
 	userId := favoriteParam.UserID
 	videoId := favoriteParam.VideoID
 	actionType := favoriteParam.ActionType
@@ -85,33 +84,23 @@ func (f Favorite) Like(favoriteParam *param.Favorite) error {
 }
 
 func (f Favorite) FavoriteList(userId int) ([]bo.Video, error) {
+	//todo 调用视频的联查
 	videosId, err := favoriteDao.QueryVideoIdsByUserId(userId)
 	if err != nil {
 		return nil, err
 	}
 	videoDao := daoimpl.NewVideoDaoInstance()
-	var pvideos *[]po.Video
-	pvideos, err = videoDao.QueryBatchIds(videosId)
+	var poVideos *[]po.Video
+	poVideos, err = videoDao.QueryBatchIds(videosId)
 	if err != nil {
 		return nil, err
 	}
-	var bvideos *[]bo.Video
-	err = entityutil.GetVideoBOS(pvideos, bvideos)
+	var boVideos *[]bo.Video
+	err = entityutil.GetVideoBOS(poVideos, boVideos)
 	if err != nil {
 		return nil, err
 	}
-	return *bvideos, nil
-}
-
-func (f Favorite) IsFavorite(videoId int, userId int) (bool, error) {
-	favorites, err := favoriteDao.QueryByCondition(&po.Favorite{VideoId: videoId, UserId: userId})
-	if err != nil {
-		return false, err
-	}
-	if len(*favorites) > 0 {
-		return true, nil
-	}
-	return false, nil
+	return *boVideos, nil
 }
 
 var (

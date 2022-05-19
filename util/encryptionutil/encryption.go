@@ -30,8 +30,11 @@ func EncryptionCompare(src string, encryptionString string) (bool, error) {
 	if src == "" {
 		return false, errors.New("错误：密码为空")
 	}
-	md5src, _ := Encryption(src)
-	if strings.EqualFold(md5src, encryptionString) == true {
+	md5src, err := Encryption(src)
+	if err != nil {
+		return false, err
+	}
+	if strings.EqualFold(md5src, encryptionString) {
 		return true, nil
 	}
 	return false, errors.New("用户名或密码输入错误，请重试")

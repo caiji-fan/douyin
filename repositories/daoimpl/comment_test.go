@@ -30,7 +30,7 @@ func TestComment_QueryByCondition(t *testing.T) {
 	comment.VideoId = 1
 	comment.SenderId = 1
 	comment.Status = po.NORMAL
-	comments, err := commentDao.QueryByCondition(&comment)
+	comments, err := commentDao.QueryByConditionOrderByTime(&comment)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -46,7 +46,7 @@ func TestComment_QueryByCondition2(t *testing.T) {
 			commentDao := NewCommentDaoInstance()
 			var comment po.Comment
 			comment.VideoId = 2
-			comments, err := commentDao.QueryByCondition(&comment)
+			comments, err := commentDao.QueryByConditionOrderByTime(&comment)
 			if err != nil {
 				log.Fatalln(err)
 			}

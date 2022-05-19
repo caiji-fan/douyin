@@ -27,9 +27,9 @@ func (r Relation) Follow(relationParam *param.Relation) error {
 			return err
 		}
 		//使用消息队列 异步 增加user_id用户的关注量  增加toUserId用户的粉丝量
-		err1 := rabbitutil.ChangeFollowNum(userId, toUserId, true)
-		if err1 != nil {
-			return err1
+		err = rabbitutil.ChangeFollowNum(userId, toUserId, true)
+		if err != nil {
+			return err
 		}
 	} else {
 		err := relationDao.DeleteByCondition(&po.Follow{FollowId: toUserId, FollowerId: userId})
@@ -37,15 +37,16 @@ func (r Relation) Follow(relationParam *param.Relation) error {
 			return err
 		}
 		//使用消息队列 异步 减少user_id用户的关注量  减少toUserId用户的粉丝量
-		err1 := rabbitutil.ChangeFollowNum(userId, toUserId, false)
-		if err1 != nil {
-			return err1
+		err = rabbitutil.ChangeFollowNum(userId, toUserId, false)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
 func (r Relation) FollowList(userId int) (*[]bo.User, error) {
+	//todo 改为userDao QueryFollow
 	usersId, err := relationDao.QueryFollowIdByFansId(userId)
 	if err != nil {
 		return nil, err
@@ -64,6 +65,7 @@ func (r Relation) FollowList(userId int) (*[]bo.User, error) {
 }
 
 func (r Relation) FansList(userId int) (*[]bo.User, error) {
+	//todo 改为userDao QueryFans
 	usersId, err := relationDao.QueryFansIdByFollowId(userId)
 	if err != nil {
 		return nil, err

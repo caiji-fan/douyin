@@ -13,8 +13,7 @@ type Relation struct {
 }
 
 func (r Relation) Insert(follow *po.Follow) error {
-	result := db.Select([]string{"follow_id", "follower_id"}).Create(follow)
-	err := result.Error
+	err := db.Select([]string{"follow_id", "follower_id"}).Create(follow).Error
 	if err != nil {
 		return err
 	}
@@ -59,7 +58,7 @@ func (r Relation) QueryByCondition(follow *po.Follow) (*[]po.Follow, error) {
 func (r Relation) QueryFollowIdByFansId(fansId int) ([]int, error) {
 	var userIds []int
 	var follows []po.Follow
-	result := db.Select("follow_id").Where("follower_id = ?", fansId).Order("create_time desc").Find(&follows)
+	result := db.Select("follow_id").Where("follower_id = ?", fansId).Find(&follows)
 	err := result.Error
 	if err != nil {
 		return nil, err
@@ -73,7 +72,7 @@ func (r Relation) QueryFollowIdByFansId(fansId int) ([]int, error) {
 func (r Relation) QueryFansIdByFollowId(followId int) ([]int, error) {
 	var userIds []int
 	var follows []po.Follow
-	result := db.Select("follower_id").Where("follow_id = ?", followId).Order("create_time desc").Find(&follows)
+	result := db.Select("follower_id").Where("follow_id = ?", followId).Find(&follows)
 	err := result.Error
 	if err != nil {
 		return nil, err

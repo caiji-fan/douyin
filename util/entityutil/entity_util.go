@@ -95,6 +95,7 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 				CommentCount:  c1.CommentCount,
 				Title:         c1.Title,
 			}
+			//TODO 视频转换改进
 			user_id := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
 			uid, _ := strconv.Atoi(user_id)
 			var fav po.Favorite = po.Favorite{
@@ -117,6 +118,7 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 // src				用户PO集
 // dest 			用户BO集
 func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
+	//TODO 改进，多个pouser转换为bouser
 	for i, user := range *users {
 		//直接调用单个user转换
 		GetUserBO(&user, &((*dest)[i]))
@@ -135,12 +137,18 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 		bouser.FollowerCount = pouser.FollowerCount
 		bouser.IsFollow = false
 	*/
+
+	//TODO 改为dest.ID = src.ID
 	(*dest).ID = (*src).ID
 	(*dest).Name = (*src).Name
 	(*dest).FollowCount = (*src).FollowCount
 	(*dest).FollowerCount = (*src).FollowerCount
-	user_id := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, _ := strconv.Atoi(user_id)
+	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	uid, err := strconv.Atoi(userId)
+	//TODO 处理err
+	if err != nil {
+
+	}
 	var pof po.Follow = po.Follow{
 		FollowId:   uid,
 		FollowerId: (*src).ID,

@@ -74,17 +74,17 @@ func (c Comment) CommentList(videoId int) (*[]bo.Comment, error) {
 	commentDao := daoimpl.NewCommentDaoInstance()
 	var comment = new(po.Comment)
 	comment.VideoId = videoId
-	comments, err := commentDao.QueryByCondition(comment)
+	comments, err := commentDao.QueryByConditionOrderByTime(comment)
 	if err != nil {
 		return nil, err
 	}
 	//转换
-	var commentBos *[]bo.Comment
-	err = entityutil.GetCommentBOS(comments, commentBos)
+	var commentBos = make([]bo.Comment, len(*comments))
+	err = entityutil.GetCommentBOS(comments, &commentBos)
 	if err != nil {
 		return nil, err
 	}
-	return commentBos, nil
+	return &commentBos, nil
 }
 
 var (

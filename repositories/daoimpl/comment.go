@@ -16,7 +16,7 @@ func (c Comment) Insert(comment *po.Comment) error {
 	return db.Omit("ID", "create_time", "update_time").Create(comment).Error
 }
 
-func (c Comment) QueryByCondition(comment *po.Comment) (*[]po.Comment, error) {
+func (c Comment) QueryByConditionOrderByTime(comment *po.Comment) (*[]po.Comment, error) {
 	var comments []po.Comment
 	if comment.ID != 0 {
 		return &comments, db.Where("id=?", comment.ID).Find(&comments).Error
@@ -31,7 +31,7 @@ func (c Comment) QueryByCondition(comment *po.Comment) (*[]po.Comment, error) {
 	if comment.Status != 0 {
 		db1 = db1.Where("status = ?", comment.Status)
 	}
-	return &comments, db1.Model(comment).Find(&comments).Error
+	return &comments, db1.Model(comment).Order("create_time desc").Find(&comments).Error
 }
 
 func (c Comment) UpdateByCondition(comment *po.Comment) error {
