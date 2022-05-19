@@ -4,7 +4,9 @@
 package controller
 
 import (
+	"douyin/entity/myerr"
 	"douyin/entity/param"
+	"douyin/entity/response"
 	"douyin/service/serviceimpl"
 	"douyin/util/webutil"
 	"github.com/gin-gonic/gin"
@@ -16,28 +18,17 @@ func Register(context *gin.Context) {
 	var user param.User
 	err := context.ShouldBindQuery(&user)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"status_code": -1,
-			"status_msg":  webutil.GetValidMsg(err, user),
-			"user_id":     0,
-			"token":       "",
-		})
+		context.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, user))))
 		return
 	}
 	userId, token, err := serviceimpl.NewUserService().Register(user)
 	if err != nil { //注册失败
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"status_code": "2",
-			"status_msg":  err.Error(),
-			"user_id":     userId,
-			"token":       token,
-		})
+		context.JSON(http.StatusInternalServerError, response.ErrorResponse(err))
 	} else { //注册成功
-		context.JSON(http.StatusOK, gin.H{
-			"status_code": 0,
-			"status_msg":  "注册成功",
-			"user_id":     userId,
-			"token":       token,
+		context.JSON(http.StatusOK, response.Register{
+			Response: response.Ok,
+			UserId:   userId,
+			Token:    token,
 		})
 	}
 }
@@ -47,28 +38,17 @@ func Login(context *gin.Context) {
 	var user param.User
 	err := context.ShouldBindQuery(&user)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"status_code": -1,
-			"status_msg":  webutil.GetValidMsg(err, user),
-			"user_id":     0,
-			"token":       "",
-		})
+		context.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, user))))
 		return
 	}
 	userId, token, err := serviceimpl.NewUserService().Login(user)
 	if err != nil { //登录失败
-		context.JSON(407, gin.H{
-			"status_code": 2,
-			"status_msg":  err.Error(),
-			"user_id":     userId,
-			"token":       token,
-		})
+		context.JSON(http.StatusProxyAuthRequired, response.ErrorResponse(err))
 	} else { //登录成功
-		context.JSON(200, gin.H{
-			"status_code": 0,
-			"status_msg":  "登录成功",
-			"user_id":     userId,
-			"token":       token,
+		context.JSON(http.StatusOK, response.Register{
+			Response: response.Ok,
+			UserId:   userId,
+			Token:    token,
 		})
 	}
 }
@@ -78,25 +58,16 @@ func UserInfo(context *gin.Context) {
 	var userInfoParam param.UserInfo
 	err := context.ShouldBindQuery(&userInfoParam)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"status_code": -1,
-			"status_msg":  webutil.GetValidMsg(err, userInfoParam),
-			"user":        nil,
-		})
+		context.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, userInfoParam))))
 		return
 	}
 	user, err := serviceimpl.NewUserService().UserInfo(userInfoParam.UserId)
 	if err != nil {
-		context.JSON(405, gin.H{
-			"status_code": 1,
-			"status_msg":  err.Error(),
-			"user":        nil,
-		})
+		context.JSON(http.StatusBadRequest, response.ErrorResponse(err))
 	} else {
-		context.JSON(200, gin.H{
-			"status_code": 1,
-			"status_msg":  nil,
-			"user":        user,
+		context.JSON(http.StatusOK, response.UserInfo{
+			Response: response.Ok,
+			User:     *user,
 		})
 	}
 }

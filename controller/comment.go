@@ -4,35 +4,32 @@
 package controller
 
 import (
+	"douyin/entity/myerr"
 	"douyin/entity/param"
+	"douyin/entity/response"
 	"douyin/service/serviceimpl"
 	"douyin/util/webutil"
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
 // Comment 			评论
 func Comment(ctx *gin.Context) {
 	var commentParam param.Comment
-
 	err := ctx.ShouldBindQuery(&commentParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status_code": 1,
-			"status_msg":  fmt.Sprintf("参数错误 %v", webutil.GetValidMsg(err, commentParam)),
-		})
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, commentParam))))
 		return
 	}
 	err = serviceimpl.NewCommentServiceInstance().Comment(&commentParam)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"status_code": 1,
-			"status_msg":  "系统维护中",
-		})
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, response.SystemError)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"status_code": 0, "status_msg": "ok"})
+	ctx.JSON(http.StatusOK, response.Ok)
 }
 
 // CommentList 		查看评论列表
@@ -40,17 +37,13 @@ func CommentList(ctx *gin.Context) {
 	var commentListParam param.CommentList
 	err := ctx.ShouldBindQuery(&commentListParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status_code":  1,
-			"status_msg":   fmt.Sprintf("参数错误 %v", webutil.GetValidMsg(err, commentListParam)),
-			"comment_list": nil,
-		})
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, commentListParam))))
 		return
 	}
 	commentList, err := serviceimpl.NewCommentServiceInstance().CommentList(commentListParam.VideoId)
-	ctx.JSON(http.StatusOK, gin.H{
-		"status_code":  0,
-		"status_msg":   "ok",
-		"comment_list": commentList,
+	ctx.JSON(http.StatusOK, response.CommentList{
+		Response: response.Ok,
+		Data:     *commentList,
 	})
 }

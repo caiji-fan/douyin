@@ -5,6 +5,7 @@ package serviceimpl
 
 import (
 	"douyin/entity/bo"
+	"douyin/entity/myerr"
 	"douyin/entity/param"
 	"douyin/entity/po"
 	"douyin/repositories/daoimpl"
@@ -12,7 +13,6 @@ import (
 	"douyin/util/encryptionutil"
 	"douyin/util/entityutil"
 	"douyin/util/jwtutil"
-	"errors"
 	"sync"
 )
 
@@ -37,7 +37,7 @@ func (UserServiceImpl) UserInfo(userId int) (*bo.User, error) {
 		return nil, err
 	}
 	if userPo == nil {
-		return nil, errors.New("查无此人")
+		return nil, myerr.UserNotFound
 	}
 	err = entityutil.GetUserBO(userPo, &userBo)
 	if err != nil {
@@ -53,7 +53,7 @@ func (UserServiceImpl) Register(userParam param.User) (int, string, error) {
 		return 0, "", err
 	}
 	if len(*users) != 0 {
-		return 0, "", errors.New("用户名已存在")
+		return 0, "", myerr.UserNameExist
 	}
 	userPo.Password, err = encryptionutil.Encryption(userParam.Password) //调用md5密码加密工具方法
 	if err != nil {
@@ -77,7 +77,7 @@ func (UserServiceImpl) Login(userParam param.User) (int, string, error) {
 		return 0, "", err
 	}
 	if len(*users) == 0 {
-		return 0, "", errors.New("用户不存在")
+		return 0, "", myerr.UserNotFound
 	}
 	tt, err := encryptionutil.EncryptionCompare(userParam.Password, (*users)[0].Password) //调用md5加密对比工具方法
 	if err != nil {

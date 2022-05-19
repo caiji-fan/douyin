@@ -5,12 +5,12 @@ package serviceimpl
 
 import (
 	"douyin/entity/bo"
+	"douyin/entity/myerr"
 	"douyin/entity/param"
 	"douyin/entity/po"
 	"douyin/repositories/daoimpl"
 	"douyin/service"
 	"douyin/util/entityutil"
-	"errors"
 	"sync"
 )
 
@@ -19,9 +19,9 @@ type Comment struct {
 
 func (c Comment) Comment(commentParam *param.Comment) error {
 	//todo 校验视频是否存在
-	//err := validVideoExistence(commentParam.VideoID)
-	//if err != nil {
-	//	return err
+	//myerr := validVideoExistence(commentParam.VideoID)
+	//if myerr != nil {
+	//	return myerr
 	//}
 	if commentParam.ActionType == param.DO_COMMENT {
 		return doComment(commentParam)
@@ -58,7 +58,7 @@ func validVideoExistence(videoId int) error {
 		return err
 	}
 	if video != nil {
-		return errors.New("视频不存在")
+		return myerr.VideoNotFound
 	}
 	return nil
 }
@@ -66,9 +66,9 @@ func validVideoExistence(videoId int) error {
 func (c Comment) CommentList(videoId int) (*[]bo.Comment, error) {
 	//todo 校验视频是否存在
 	// 校验
-	//err := validVideoExistence(videoId)
-	//if err != nil {
-	//	return nil, err
+	//myerr := validVideoExistence(videoId)
+	//if myerr != nil {
+	//	return nil, myerr
 	//}
 	// 查询
 	commentDao := daoimpl.NewCommentDaoInstance()

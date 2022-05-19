@@ -5,10 +5,13 @@ package middleware
 
 import (
 	"douyin/config"
+	"douyin/entity/myerr"
+	"douyin/entity/response"
 	"douyin/util/jwtutil"
 	"douyin/util/redisutil"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -29,6 +32,7 @@ func JWTAuth(ctx *gin.Context) {
 		//获取参数userId
 		userId, err = getUserId(ctx)
 		if err != nil {
+			log.Println(err)
 			return
 		}
 		//获取token
@@ -38,17 +42,20 @@ func JWTAuth(ctx *gin.Context) {
 	//解析token
 	err, uid := parseToken(ctx, tokenString)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	//从redis判断token是否有效
 	err = tokenValid(ctx, uid)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 	//对比两个id是否一致 (投稿接口不需要此判断)
 	if !flag {
 		err = equalId(ctx, userId, uid)
 		if err != nil {
+			log.Println(err)
 			return
 		}
 	}
@@ -77,10 +84,7 @@ func parseToken(ctx *gin.Context, token string) (error, int) {
 	uid, err := jwtutil.ParseJWT(token)
 	if err != nil {
 		//token过期
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status_code": http.StatusBadRequest,
-			"status_msg":  "token已过期/未获取到token参数",
-		})
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.InvalidToken))
 		ctx.Abort()
 	}
 	return err, uid
@@ -91,10 +95,7 @@ func tokenValid(ctx *gin.Context, userId int) error {
 	var redisToken string
 	err := redisutil.Get(config.Config.Redis.Key.Token+strconv.Itoa(userId), &redisToken)
 	if err != nil || redisToken == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status_code": http.StatusBadRequest,
-			"status_msg":  "redis中token不存在",
-		})
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.InvalidToken))
 		ctx.Abort()
 		return errors.New("redis中token不存在")
 	}
@@ -105,10 +106,7 @@ func tokenValid(ctx *gin.Context, userId int) error {
 func equalId(ctx *gin.Context, userId int, uId int) error {
 	if userId != uId {
 		//id不一致
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status_code": http.StatusBadRequest,
-			"status_msg":  "无权限",
-		})
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.NoPermission))
 		ctx.Abort()
 		return errors.New("id不一致")
 	}

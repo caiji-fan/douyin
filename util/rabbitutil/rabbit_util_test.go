@@ -29,8 +29,8 @@ func TestFeedVideo(t *testing.T) {
 }
 
 func TestUploadVideo(t *testing.T) {
-	//err := UploadVideo()
-	//if err != nil {
-	//	log.Fatalln(err)
+	//myerr := UploadVideo()
+	//if myerr != nil {
+	//	log.Fatalln(myerr)
 	//}
 }

@@ -39,7 +39,6 @@ func TestComment_Comment2(t *testing.T) {
 }
 
 func TestComment_CommentList(t *testing.T) {
-	//todo 测试评论列表
 	commentService := NewCommentServiceInstance()
 	list, err := commentService.CommentList(1)
 	if err != nil {
