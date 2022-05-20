@@ -4,12 +4,9 @@
 package daoimpl
 
 import (
-	"douyin/config"
 	"douyin/entity/po"
-	"douyin/middleware"
 	"douyin/repositories"
 	"gorm.io/gorm"
-	"strconv"
 	"sync"
 )
 
@@ -85,17 +82,9 @@ func (i UserImpl) UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error
 }
 
 //QueryFollow 查询关注列表并且时间倒序
-func (i UserImpl) QueryFollow() (*[]po.User, error) {
-	db1 := db
-	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId)
-	if err != nil {
-		return nil, err
-	}
-	//todo测试用
-	//uid := 7 //测试用
+func (i UserImpl) QueryFollows(userId int) (*[]po.User, error) {
 	var poUsers []po.User = []po.User{}
-	err = db1.Raw("SELECT  u.*  FROM dy_user AS u,dy_follow AS f WHERE f.follower_id=? AND u.id=f.follow_id ORDER BY f.update_time DESC", uid).Scan(&poUsers).Error
+	err := db.Raw("SELECT  u.*  FROM dy_user AS u,dy_follow AS f WHERE f.follower_id=? AND u.id=f.follow_id ORDER BY f.update_time DESC", userId).Scan(&poUsers).Error
 	if err != nil {
 		return nil, err
 	}
@@ -103,17 +92,9 @@ func (i UserImpl) QueryFollow() (*[]po.User, error) {
 }
 
 //QueryFans 查询粉丝列表并且时间倒序
-func (i UserImpl) QueryFans() (*[]po.User, error) {
-	db1 := db
-	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId)
-	if err != nil {
-		return nil, err
-	}
-	//todo测试用
-	//uid := 7 //测试用
+func (i UserImpl) QueryFans(userId int) (*[]po.User, error) {
 	var poUsers []po.User = []po.User{}
-	err = db1.Raw("SELECT  u.*  FROM dy_user AS u,dy_follow AS f WHERE f.follow_id=? AND u.id=f.follower_id ORDER BY f.update_time DESC", uid).Scan(&poUsers).Error
+	err := db.Raw("SELECT  u.*  FROM dy_user AS u,dy_follow AS f WHERE f.follow_id=? AND u.id=f.follower_id ORDER BY f.update_time DESC", userId).Scan(&poUsers).Error
 	if err != nil {
 		return nil, err
 	}
