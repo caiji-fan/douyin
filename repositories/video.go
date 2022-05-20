@@ -43,5 +43,10 @@ type Video interface {
 	// @return			视频数据
 	QueryForUpdate(videoId int) (*po.Video, error)
 
+	// QueryVideosByUserId		通过用户id联表查询
+	// userId 					用户id
+	// @return 					(倒序)视频集合
+	QueryVideosByUserId(userId int) (*[]po.Video, error)
+
 	Begin() (tx *gorm.DB)
 }

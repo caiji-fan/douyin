@@ -18,6 +18,7 @@ type config struct {
 	Obs         obs         `yaml:"obs"`
 	Service     service     `yaml:"service"`
 	ThreadLocal threadLocal `yaml:"thread-local"`
+	Jwt         jwt         `yaml:"jwt"`
 }
 
 // Config 全局配置实例

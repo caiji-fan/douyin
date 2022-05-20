@@ -84,23 +84,18 @@ func (f Favorite) Like(favoriteParam *param.Favorite) error {
 }
 
 func (f Favorite) FavoriteList(userId int) ([]bo.Video, error) {
-	//todo 调用视频的联查
-	videosId, err := favoriteDao.QueryVideoIdsByUserId(userId)
-	if err != nil {
-		return nil, err
-	}
-	videoDao := daoimpl.NewVideoDaoInstance()
+
 	var poVideos *[]po.Video
-	poVideos, err = videoDao.QueryBatchIds(videosId)
+	poVideos, err := daoimpl.NewVideoDaoInstance().QueryVideosByUserId(userId)
 	if err != nil {
 		return nil, err
 	}
-	var boVideos *[]bo.Video
-	err = entityutil.GetVideoBOS(poVideos, boVideos)
+	var boVideos = make([]bo.Video, len(*poVideos))
+	err = entityutil.GetVideoBOS(poVideos, &boVideos)
 	if err != nil {
 		return nil, err
 	}
-	return *boVideos, nil
+	return boVideos, nil
 }
 
 var (

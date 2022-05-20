@@ -80,3 +80,6 @@ service:
   big-v-num: 1000000
   # 临时路径
   temp-dir: ""
+jwt:
+  expire-time: 86400
+  secret-key: "douyinQ"
