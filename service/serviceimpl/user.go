@@ -16,7 +16,6 @@ import (
 	"douyin/util/entityutil"
 	"douyin/util/jwtutil"
 	"douyin/util/redisutil"
-	"errors"
 	"sync"
 	"time"
 )
@@ -92,7 +91,7 @@ func (UserServiceImpl) Login(userParam param.User) (int, string, error) {
 		return 0, "", err
 	}
 	if tt == false {
-		return -1, "", err
+		return -1, "", myerr.LoginError
 	}
 	jwt, err := jwtutil.CreateJWT((*users)[0].ID)
 	if err != nil {

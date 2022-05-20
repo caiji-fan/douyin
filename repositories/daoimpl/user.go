@@ -47,7 +47,7 @@ func (UserImpl) Insert(tx *gorm.DB, isTx bool, user *po.User) (int, error) {
 }
 func (UserImpl) QueryBatchIds(userIds *[]int) (*[]po.User, error) {
 	db1 := db
-	userList := []po.User{} //根据一堆id查多个用户数据
+	userList := make([]po.User, len(*userIds)) //根据一堆id查多个用户数据
 	var err error
 	err = db1.Where("id IN ?", *userIds).Find(&userList).Error
 	return &userList, err
@@ -81,9 +81,9 @@ func (i UserImpl) UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error
 	return client.Model(user).Updates(user).Error
 }
 
-//QueryFollow 查询关注列表并且时间倒序
+//QueryFollows 查询关注列表并且时间倒序
 func (i UserImpl) QueryFollows(userId int) (*[]po.User, error) {
-	var poUsers []po.User = []po.User{}
+	var poUsers = make([]po.User, 5)
 	err := db.Raw("SELECT  u.*  FROM dy_user AS u,dy_follow AS f WHERE f.follower_id=? AND u.id=f.follow_id ORDER BY f.update_time DESC", userId).Scan(&poUsers).Error
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (i UserImpl) QueryFollows(userId int) (*[]po.User, error) {
 
 //QueryFans 查询粉丝列表并且时间倒序
 func (i UserImpl) QueryFans(userId int) (*[]po.User, error) {
-	var poUsers []po.User = []po.User{}
+	var poUsers = make([]po.User, 5)
 	err := db.Raw("SELECT  u.*  FROM dy_user AS u,dy_follow AS f WHERE f.follow_id=? AND u.id=f.follower_id ORDER BY f.update_time DESC", userId).Scan(&poUsers).Error
 	if err != nil {
 		return nil, err

@@ -30,6 +30,8 @@ func ErrorResponse(err error) Response {
 		return Response{Code: -1, Message: "您的凭证无效"}
 	case myerr.VideoNotFound:
 		return Response{Code: -1, Message: "该视频不存在"}
+	case myerr.LoginError:
+		return Response{Code: -1, Message: "用户名或密码错误"}
 	default:
 		return Response{Code: -1, Message: "系统维护中"}
 	}

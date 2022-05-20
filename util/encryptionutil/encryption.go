@@ -16,7 +16,7 @@ import (
 // @return 				加密后的字符串
 func Encryption(src string) (string, error) {
 	if src == "" {
-		return "", errors.New("错误：密码为空")
+		return "", errors.New("字符串不能为空")
 	}
 	data := []byte(src) //首先转换成字符串
 	md5data := md5.Sum(data)
@@ -28,7 +28,7 @@ func Encryption(src string) (string, error) {
 // encryptionString 	待对比的加密字符串
 func EncryptionCompare(src string, encryptionString string) (bool, error) {
 	if src == "" {
-		return false, errors.New("错误：密码为空")
+		return false, errors.New("字符串不能为空")
 	}
 	md5src, err := Encryption(src)
 	if err != nil {
@@ -37,5 +37,5 @@ func EncryptionCompare(src string, encryptionString string) (bool, error) {
 	if strings.EqualFold(md5src, encryptionString) {
 		return true, nil
 	}
-	return false, errors.New("用户名或密码输入错误，请重试")
+	return false, nil
 }
