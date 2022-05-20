@@ -56,12 +56,12 @@ func (r Relation) FollowList(userId int) (*[]bo.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	var userBOS *[]bo.User
-	err = entityutil.GetUserBOS(userPOS, userBOS)
+	var userBOS = make([]bo.User, len(*userPOS))
+	err = entityutil.GetUserBOS(userPOS, &userBOS)
 	if err != nil {
 		return nil, err
 	}
-	return userBOS, nil
+	return &userBOS, nil
 }
 
 func (r Relation) FansList(userId int) (*[]bo.User, error) {

@@ -96,3 +96,15 @@ func TestFavoriteDaoImpl_QueryByCondition(t *testing.T) {
 	}
 	fmt.Println(favorites)
 }
+func TestUserImpl_QueryBatchIds(t *testing.T) {
+	userIds := make([]int, 0)
+	userIds = append(userIds, 1)
+	userIds = append(userIds, 2)
+	poUsers, error := NewUserDaoInstance().QueryBatchIds(&userIds)
+	if error != nil {
+		panic(error)
+	}
+	for _, poUser := range *poUsers {
+		fmt.Println(poUser)
+	}
+}

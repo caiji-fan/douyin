@@ -5,12 +5,9 @@
 package entityutil
 
 import (
-	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/po"
-	"douyin/middleware"
 	"douyin/repositories/daoimpl"
-	"strconv"
 )
 
 // GetCommentBOS 	获取评论BO实例集
@@ -96,8 +93,9 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 				Title:         c1.Title,
 			}
 			//TODO 视频转换改进
-			user_id := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-			uid, _ := strconv.Atoi(user_id)
+			//user_id := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+			//uid, _ := strconv.Atoi(user_id)
+			uid := 1
 			var fav po.Favorite = po.Favorite{
 				VideoId: c1.ID,
 				UserId:  uid,
@@ -143,12 +141,13 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 	(*dest).Name = (*src).Name
 	(*dest).FollowCount = (*src).FollowCount
 	(*dest).FollowerCount = (*src).FollowerCount
-	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId)
-	//TODO 处理err
-	if err != nil {
-
-	}
+	//userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	//uid, err := strconv.Atoi(userId)
+	////TODO 处理err
+	//if err != nil {
+	//
+	//}
+	uid := 1
 	var pof po.Follow = po.Follow{
 		FollowId:   uid,
 		FollowerId: (*src).ID,
