@@ -4,16 +4,20 @@
 package serviceimpl
 
 import (
+	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/param"
 	"douyin/entity/po"
+	"douyin/middleware"
 	"douyin/repositories/daoimpl"
 	"douyin/service"
 	"douyin/util/encryptionutil"
 	"douyin/util/entityutil"
 	"douyin/util/jwtutil"
+	"douyin/util/redisutil"
 	"errors"
 	"sync"
+	"time"
 )
 
 type UserServiceImpl struct {
@@ -66,7 +70,10 @@ func (UserServiceImpl) Register(userParam param.User) (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
-	//TODO redis存token
+	err = saveTokenToRedis(jwt)
+	if err != nil {
+		return 0, "", err
+	}
 	return userId, jwt, nil
 }
 func (UserServiceImpl) Login(userParam param.User) (int, string, error) {
@@ -86,10 +93,22 @@ func (UserServiceImpl) Login(userParam param.User) (int, string, error) {
 	if tt == false {
 		return -1, "", err
 	}
-	//TODO redis存token
 	jwt, err := jwtutil.CreateJWT((*users)[0].ID)
 	if err != nil {
 		return 0, "", err
 	}
+	err = saveTokenToRedis(jwt)
+	if err != nil {
+		return 0, "", err
+	}
 	return (*users)[0].ID, jwt, nil
+}
+func saveTokenToRedis(token string) error {
+	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	tokenExpireTime, err := time.ParseDuration(config.Config.Redis.ExpireTime.Token)
+	if err != nil {
+		return err
+	}
+	redisutil.SetWithExpireTime(config.Config.Redis.Key.Token+userId, &token, tokenExpireTime)
+	return nil
 }
