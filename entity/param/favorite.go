@@ -3,6 +3,11 @@
 // @Date 2022/5/13
 package param
 
+const (
+	DO_LIKE     = 1
+	CANCEL_LIKE = 2
+)
+
 // Favorite 点赞参数
 type Favorite struct {
 	UserID     int  `form:"user_id" binding:"required" msg:"无效的用户标识"`
