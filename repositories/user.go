@@ -40,8 +40,10 @@ type User interface {
 	// user				用户
 	// @return 			用户切片
 	QueryByCondition(user *po.User) (*[]po.User, error)
+
 	//QueryFollow 查询关注列表并且时间倒序
-	QueryFollow()
+	QueryFollows(userId int) (*[]po.User, error)
+
 	//QueryFans 查询粉丝列表并且时间倒序
-	QueryFans()
+	QueryFans(userId int) (*[]po.User, error)
 }

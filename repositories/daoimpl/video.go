@@ -13,6 +13,15 @@ import (
 type Video struct {
 }
 
+func (v Video) QueryVideosByUserId(userId int) (*[]po.Video, error) {
+	var poVideos []po.Video
+	err := db.Raw("SELECT v.* FROM dy_video v,dy_favorite f WHERE v.`id`= f.`video_id` AND f.`user_id` = ? ORDER BY f.`create_time` DESC", userId).Scan(&poVideos).Error
+	if err != nil {
+		return nil, err
+	}
+	return &poVideos, err
+}
+
 func (v Video) QueryForUpdate(videoId int) (*po.Video, error) {
 	//TODO implement me
 	panic("implement me")

@@ -5,12 +5,13 @@
 package jwtutil
 
 import (
+	"douyin/config"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )
 
 //加密秘钥
-var mySigningKey = []byte("douyinQ")
+var mySigningKey = []byte(config.Config.Jwt.SecretKey)
 
 // CreateJWT 	生成token
 // id 			用户id
@@ -20,7 +21,7 @@ func CreateJWT(id int) (string, error) {
 	//加密用户id
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":  id,
-		"exp": time.Now().Unix() + 24*60*60, //过期时间: 一天
+		"exp": time.Now().Unix() + int64(config.Config.Jwt.ExpireTime), //过期时间: 一天
 	})
 	//使用秘钥加密token
 	tokenString, err := token.SignedString(mySigningKey)
