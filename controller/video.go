@@ -4,6 +4,7 @@
 package controller
 
 import (
+	"douyin/config"
 	"douyin/entity/myerr"
 	"douyin/entity/param"
 	"douyin/entity/response"
@@ -12,6 +13,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,30 +25,48 @@ func Feed(ctx *gin.Context) {
 
 // Publish 		投稿视频
 func Publish(ctx *gin.Context) {
-	var video param.Video
-	err := ctx.ShouldBindQuery(&video)
+	// 通过线程获取投稿人id
+	authorId, err := strconv.Atoi(config.Config.ThreadLocal.Keys.UserId)
+
+	// 通过请求参数获取视频标题
+	var videoParm param.Video
+	err = ctx.ShouldBindQuery(&videoParm)
 	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoParm))))
+		return
+	}
+
+	// 获取视频本地地址并处理
+	video, err := ctx.FormFile("video")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.VideoNotFound))
+		return
+	}
+	videoPath := filepath.Base(video.Filename)
+	videoFinalName := fmt.Sprintf("%d_%s", authorId, videoPath)
+	videoSaveFile := filepath.Join("./public/", videoFinalName)
+	if err := ctx.SaveUploadedFile(video, videoSaveFile); err != nil {
 		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, video))))
 		return
 	}
+	vFile, err := video.Open()
 
-	data, err := ctx.FormFile("data")
+	// 获取封面本地地址并处理
+	cover, err := ctx.FormFile("cover")
 	if err != nil {
-		response.ErrorResponse(myerr.VideoNotFound)
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, data))))
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, cover))))
 		return
 	}
-	filename := filepath.Base(data.Filename)
-
-	finalName := fmt.Sprintf("%d_%s", video.AuthorId, filename)
-	saveFile := filepath.Join("./public/", finalName)
-	if err := ctx.SaveUploadedFile(data, saveFile); err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, data))))
+	coverPath := filepath.Base(cover.Filename)
+	coverFinalName := fmt.Sprintf("%d_%s", authorId, coverPath)
+	coverSaveFile := filepath.Join("./public/", coverFinalName)
+	if err := ctx.SaveUploadedFile(video, coverSaveFile); err != nil {
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, cover))))
 		return
 	}
+	cFile, err := cover.Open()
 
-	file, err := data.Open()
-	err = serviceimpl.Publish(&file, video.AuthorId)
+	err = serviceimpl.Publish(&vFile, &cFile, authorId)
 	if err != nil {
 		ctx.JSON(http.StatusProxyAuthRequired, response.ErrorResponse(err))
 	}

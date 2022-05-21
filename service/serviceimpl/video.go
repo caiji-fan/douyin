@@ -13,7 +13,7 @@ type Video struct {
 }
 
 // Publish check token then save upload file to public directory
-func Publish(file *multipart.File, userId int) error {
+func Publish(video *multipart.File, cover *multipart.File, userId int) error {
 	// 得到token(略)与视频信息
 	// 本地视频临时保存视频文件
 	// 消息队列异步上传视频
