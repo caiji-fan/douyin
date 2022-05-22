@@ -65,5 +65,20 @@ func Publish(ctx *gin.Context) {
 
 // VideoList 	查看视频发布列表
 func VideoList(ctx *gin.Context) {
+	// 通过请求参数获取对象id
+	var videoList param.VideoList
+	err := ctx.ShouldBindQuery(&videoList)
+	if err != nil {
+		return
+	}
 
+	var v serviceimpl.Video
+	boVideos, err := v.VideoList(videoList.UserID)
+	if err != nil {
+
+	}
+	ctx.JSON(http.StatusOK, response.VideoList{
+		Response:  response.Ok,
+		VideoList: boVideos,
+	})
 }

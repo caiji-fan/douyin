@@ -7,7 +7,7 @@ import "douyin/entity/bo"
 
 type VideoList struct {
 	Response
-	Data []bo.Video `json:"video_list"`
+	VideoList []bo.Video `json:"video_list"`
 }
 
 type PubVideo struct {

@@ -4,13 +4,13 @@
 package serviceimpl
 
 import (
+	"douyin/entity/bo"
 	"douyin/entity/po"
 	"douyin/repositories/daoimpl"
+	"douyin/util/entityutil"
 	"douyin/util/obsutil"
 	"mime/multipart"
 	"path/filepath"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Video struct {
@@ -64,12 +64,14 @@ func (v Video) Publish(video *multipart.FileHeader, cover *multipart.FileHeader,
 	return nil
 }
 
-// PublishList all users have same publish video list
-func PublishList(c *gin.Context) {
-	// c.JSON(http.StatusOK, VideoList{
-	// 	Response: Response{
-	// 		StatusCode: 0,
-	// 	},
-	// 	VideoList: DemoVideos,
-	// })
+func (v Video) VideoList(userId int) ([]bo.Video, error) {
+	// 查询数据库获取投稿列表
+	poVideoList, err := daoimpl.NewVideoDaoInstance().QueryVideosByUserId(userId)
+	if err != nil {
+		return nil, err
+	}
+	var boVideoList []bo.Video = make([]bo.Video, len(*poVideoList))
+	// po列表转bo
+	entityutil.GetVideoBOS(poVideoList, &boVideoList)
+	return boVideoList, nil
 }
