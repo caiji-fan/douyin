@@ -39,10 +39,12 @@ func TestComment_Comment2(t *testing.T) {
 }
 
 func TestComment_CommentList(t *testing.T) {
-	commentService := NewCommentServiceInstance()
-	list, err := commentService.CommentList(1)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(list)
+	//commentService := NewCommentServiceInstance()
+	//list, err := commentService.CommentList(1)
+	//if err != nil {
+	//	log.Fatalln(err)
+	//}
+	//fmt.Println(list)
+	var a = []int{1, 2, 3}
+	fmt.Println(a[1:])
 }
