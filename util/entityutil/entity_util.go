@@ -180,3 +180,16 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 	dest.FollowerCount = src.FollowerCount
 	return nil
 }
+
+// GetFeedBOS 	将FeedPo集合转化为FeedBo集合
+// src			FeedPO集合
+// dest			FeedBO集合
+func GetFeedBOS(src *[]po.Feed, dest *[]bo.Feed) {
+	if dest == nil || cap(*dest) < len(*src) {
+		temp := make([]bo.Feed, len(*src))
+		dest = &temp
+	}
+	for index, feed := range *src {
+		(*dest)[index] = bo.Feed{VideoId: feed.VideoId, CreateTime: feed.CreateTime}
+	}
+}
