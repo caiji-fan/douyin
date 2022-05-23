@@ -7,7 +7,7 @@ server:
 # 数据库连接信息
 database:
   # 连接url
-  dsn: "root:root@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "root:curry@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
   # 连接池参数
   pool:
     # 最长空闲时间
@@ -20,6 +20,8 @@ database:
     connMaxLifetime: 60000000000
 # 消息队列配置信息
 rabbit:
+  # 重发最大次数
+  resend-max: 5
   # 连接url
   url: "amqp://douyin:douyin@localhost:5672/douyin"
   # 交换机名
@@ -80,6 +82,9 @@ service:
   big-v-num: 1000000
   # 临时路径
   temp-dir: ""
+  # 分页大小
+  page-size: 10
 jwt:
   expire-time: 86400
   secret-key: "douyinQ"
+standard-time: "2006-01-02 15:04:05"
