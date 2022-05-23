@@ -20,9 +20,15 @@ func TestMain(t *testing.M) {
 	t.Run()
 }
 
+func TestComment_validVideoExistence(t *testing.T) {
+	err := validVideoExistence(1)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
 func TestComment_Comment(t *testing.T) {
 	commentService := NewCommentServiceInstance()
-	var commentParam = param.Comment{ActionType: 1, VideoID: 1, CommentText: "评论", UserId: 1}
+	var commentParam = param.Comment{ActionType: 1, VideoID: 9, CommentText: "评论", UserId: 1}
 	err := commentService.Comment(&commentParam)
 	if err != nil {
 		log.Fatalln(err)
@@ -39,12 +45,11 @@ func TestComment_Comment2(t *testing.T) {
 }
 
 func TestComment_CommentList(t *testing.T) {
-	//commentService := NewCommentServiceInstance()
-	//list, err := commentService.CommentList(1)
-	//if err != nil {
-	//	log.Fatalln(err)
-	//}
-	//fmt.Println(list)
-	var a = []int{1, 2, 3}
-	fmt.Println(a[1:])
+	// todo 评论实体转换工具存在问题，转换后的结果为默认值
+	commentService := NewCommentServiceInstance()
+	list, err := commentService.CommentList(1)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(list)
 }

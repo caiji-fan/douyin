@@ -18,11 +18,10 @@ type Comment struct {
 }
 
 func (c Comment) Comment(commentParam *param.Comment) error {
-	//todo 校验视频是否存在
-	//myerr := validVideoExistence(commentParam.VideoID)
-	//if myerr != nil {
-	//	return myerr
-	//}
+	err := validVideoExistence(commentParam.VideoID)
+	if err != nil {
+		return err
+	}
 	if commentParam.ActionType == param.DO_COMMENT {
 		return doComment(commentParam)
 	} else {
@@ -57,23 +56,23 @@ func validVideoExistence(videoId int) error {
 	if err != nil {
 		return err
 	}
-	if video != nil {
+	// 视频信息不为nil，初始化id为0，为0表示不存在
+	if video.ID == 0 {
 		return myerr.VideoNotFound
 	}
 	return nil
 }
 
 func (c Comment) CommentList(videoId int) (*[]bo.Comment, error) {
-	//todo 校验视频是否存在
-	// 校验
-	//myerr := validVideoExistence(videoId)
-	//if myerr != nil {
-	//	return nil, myerr
-	//}
-	// 查询
+	err2 := validVideoExistence(videoId)
+	if err2 != nil {
+		return nil, err2
+	}
+	//查询
 	commentDao := daoimpl.NewCommentDaoInstance()
 	var comment = new(po.Comment)
 	comment.VideoId = videoId
+	comment.Status = po.NORMAL
 	comments, err := commentDao.QueryByConditionOrderByTime(comment)
 	if err != nil {
 		return nil, err
