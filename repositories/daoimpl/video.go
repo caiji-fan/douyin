@@ -22,14 +22,14 @@ func (v Video) QueryVideosByUserId(userId int) (*[]po.Video, error) {
 	return &poVideos, err
 }
 
-func (v Video) QueryForUpdate(videoId int) (*po.Video, error) {
-	//TODO implement me
-	panic("implement me")
+func (v Video) QueryForUpdate(videoId int, tx *gorm.DB) (*po.Video, error) {
+	var video po.Video
+	err := tx.Raw("select id,play_url,cover_url,favorite_count,comment_count,author_id,create_time,update_time from dy_video where id =? FOR UPDATE", videoId).Scan(&video).Error
+	return &video, err
 }
 
-func (v Video) Begin() (tx *gorm.DB) {
-	//TODO implement me
-	panic("implement me")
+func (v Video) Begin() *gorm.DB {
+	return db.Begin()
 }
 
 func (v Video) UpdateByCondition(video *po.Video, tx *gorm.DB, isTx bool) error {
@@ -47,9 +47,9 @@ func (v Video) Insert(video *po.Video) error {
 	panic("implement me")
 }
 
-func (v Video) QueryBatchIds(videoIds []int) (*[]po.Video, error) {
-	//TODO implement me
-	panic("implement me")
+func (v Video) QueryBatchIds(videoIds *[]int, size int) ([]po.Video, error) {
+	var videos = make([]po.Video, len(*videoIds))
+	return videos, db.Where("id in (?)", *videoIds).Order("create_time DESC").Limit(size).Find(&videos).Error
 }
 
 func (v Video) QueryByConditionTimeDESC(condition *po.Video) (*[]po.Video, error) {
@@ -57,7 +57,7 @@ func (v Video) QueryByConditionTimeDESC(condition *po.Video) (*[]po.Video, error
 	panic("implement me")
 }
 
-func (v Video) QueryByLatestTimeDESC(latestTime string) (*[]po.Video, error) {
+func (v Video) QueryByLatestTimeDESC(latestTime string, size int) (*[]po.Video, error) {
 	//TODO implement me
 	panic("implement me")
 }

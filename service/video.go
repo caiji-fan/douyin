@@ -13,8 +13,9 @@ type Video interface {
 	// Feed 			获取feed流
 	// userId 			用户id，可以为空
 	// isLogin 			用户是否登录，用户未登录时用户id无效
+	// latestTime		最新投稿时间戳
 	// @return 			视频列表
-	Feed(userId int, isLogin bool) ([]bo.Video, error)
+	Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int64, error)
 
 	// Publish 			发布视频
 	// file 			视频文件

@@ -9,3 +9,7 @@ type Feed struct {
 	UserId  int `json:"user_id" gorm:"user_id;primaryKey"`
 	VideoId int `json:"video_id" gorm:"video_id;primaryKey"`
 }
+
+func (Feed) TableName() string {
+	return "dy_feed"
+}

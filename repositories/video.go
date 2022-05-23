@@ -16,8 +16,9 @@ type Video interface {
 
 	// QueryBatchIds 				id批量查询
 	// videoIds 					视频id集
+	// size							查询数量大小
 	// @return 						视频列表
-	QueryBatchIds(videoIds []int) (*[]po.Video, error)
+	QueryBatchIds(videoIds *[]int, size int) ([]po.Video, error)
 
 	// QueryByConditionTimeDESC 	条件查询并按时间倒序排列
 	// condition 					字段匹配查询条件
@@ -27,7 +28,7 @@ type Video interface {
 	// QueryByLatestTimeDESC 		查询某个时间点之前的视频，时间倒序
 	// latestTime					上一次最有一条视频时间
 	// @return 						视频列表
-	QueryByLatestTimeDESC(latestTime string) (*[]po.Video, error)
+	QueryByLatestTimeDESC(latestTime string, size int) (*[]po.Video, error)
 
 	// QueryById 					根据id查询
 	// id							视频id
@@ -41,12 +42,13 @@ type Video interface {
 	// QueryForUpdate 	加锁查询
 	// videoId  		视频id
 	// @return			视频数据
-	QueryForUpdate(videoId int) (*po.Video, error)
+	QueryForUpdate(videoId int, tx *gorm.DB) (*po.Video, error)
 
 	// QueryVideosByUserId		通过用户id联表查询
 	// userId 					用户id
 	// @return 					(倒序)视频集合
 	QueryVideosByUserId(userId int) (*[]po.Video, error)
 
-	Begin() (tx *gorm.DB)
+	// Begin 开启事务
+	Begin() *gorm.DB
 }
