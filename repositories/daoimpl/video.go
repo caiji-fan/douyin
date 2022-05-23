@@ -53,8 +53,7 @@ func (v Video) QueryById(id int) (*po.Video, error) {
 }
 
 func (v Video) Insert(video *po.Video) error {
-	//TODO implement me
-	panic("implement me")
+	return db.Omit("id", "create_time", "update_time").Create(video).Error
 }
 
 func (v Video) QueryBatchIds(videoIds *[]int, size int) ([]po.Video, error) {
@@ -78,13 +77,13 @@ func (v Video) QueryByConditionTimeDESC(condition *po.Video) (*[]po.Video, error
 	return &videos, err
 }
 
-func (v Video) QueryByLatestTimeDESC(latestTime string) (*[]po.Video, error) {
+func (v Video) QueryByLatestTimeDESC(latestTime string, size int) (*[]po.Video, error) {
 	db1 := db
 	var videos []po.Video
 	if latestTime != "" {
 		db1 = db1.Where("update_time < ?", latestTime)
 	}
-	err := db1.Order("update_time desc").Find(&videos).Error
+	err := db1.Order("update_time desc").Limit(size).Find(&videos).Error
 	return &videos, err
 }
 
