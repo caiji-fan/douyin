@@ -20,7 +20,7 @@ type Video interface {
 	// Publish 			发布视频
 	// file 			视频文件
 	// userId 			用户id
-	Publish(file *multipart.File, userId int) error
+	Publish(video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) error
 
 	// VideoList 		查看视频发布列表
 	// userId			用户id
