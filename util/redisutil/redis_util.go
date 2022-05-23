@@ -18,7 +18,7 @@ import (
 // key 							键
 // value 						需要插入的值，内部需要进行序列化
 func Set(key string, value interface{}) error {
-	err := RedisDB.Set(context.Background(), key, value, -1).Err()
+	err := RedisDB.Set(context.Background(), key, value, 0).Err()
 	return err
 }
 
@@ -34,23 +34,25 @@ func SetWithExpireTime(key string, value interface{}, duration time.Duration) er
 // Get 							获取string类型
 // key 							键
 // value 						获取的值存储的指针
-func Get(key string, value interface{}) error {
+func Get(key string, value *interface{}) error {
 	v, err := RedisDB.Get(context.Background(), key).Result()
-	value = &v
+	val := reflect.ValueOf(v)
+	*value = val.Interface()
 	if err == redis.Nil {
 		fmt.Print("key dose not exist")
 	} else if err != nil {
 		fmt.Printf("get %v failed, err:%v\n", key, err)
 		return err
 	}
-	fmt.Printf("get %v succeed, value:%v\n", key, v)
+	fmt.Printf("get %v succeed\n, value:%v\n", key, v)
 	return nil
 }
 
 // GetAndDelete					获取string并删除string类型
 // key							键
 // value						值
-func GetAndDelete(key string, value interface{}) error {
+func GetAndDelete(key string, value *interface{}) error {
+	// Get
 	v, err := RedisDB.Get(context.Background(), key).Result()
 	if err == redis.Nil {
 		fmt.Print("key dose not exist")
@@ -58,14 +60,16 @@ func GetAndDelete(key string, value interface{}) error {
 		fmt.Printf("get %v failed, err:%v\n", key, err)
 	}
 	fmt.Printf("get %v succeed, value:%v\n", key, v)
-	value = &v
+	val := reflect.ValueOf(v)
+	*value = val.Interface()
+	// Delete
 	_, err = RedisDB.Del(context.Background(), key).Result()
 	if err == redis.Nil {
 		fmt.Print("key dose not exist")
 	} else if err != nil {
 		fmt.Printf("del %v failed, err:%v\n", key, err)
 	}
-	fmt.Printf("del %v succeed", key)
+	fmt.Printf("del %v succeed\n", key)
 	return nil
 }
 
@@ -76,6 +80,7 @@ func GetAndDelete(key string, value interface{}) error {
 func ZSet(key string, value interface{}, score string) error {
 	val := reflect.ValueOf(value)
 	addValues := make([]*redis.Z, val.Len())
+	fmt.Printf("val.Len = %v\n", val.Len())
 	if score != "" {
 		scoref64, err := strconv.ParseFloat(score, 64)
 		if err != nil {
@@ -86,9 +91,10 @@ func ZSet(key string, value interface{}, score string) error {
 				Member: value,
 			})
 		}
-	} else {
+	} else { // 没有设置权值则权值设为默认值0
 		for _, value := range val.Interface().([]interface{}) {
 			addValues = append(addValues, &redis.Z{
+				Score:  0,
 				Member: value,
 			})
 		}
@@ -100,10 +106,11 @@ func ZSet(key string, value interface{}, score string) error {
 // ZGet 						获取set类型
 // key 							键
 // value 						获取的值存储的指针
-func ZGet(key string, value interface{}) error {
+func ZGet(key string, value *interface{}) error {
 	score, err := RedisDB.ZRange(context.Background(), key, 0, -1).Result()
 	fmt.Printf("zget 获得值：%v", score)
-	value = &score
+	val := reflect.ValueOf(score)
+	*value = val.Interface()
 	return err
 }
 
