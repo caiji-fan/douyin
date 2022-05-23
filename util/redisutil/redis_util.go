@@ -7,6 +7,7 @@ package redisutil
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 // Set 							插入string类型
 // key 							键
 // value 						需要插入的值，内部需要进行序列化
-func Set[T any](key string, value *T) error {
+func Set(key string, value interface{}) error {
 	err := RedisDB.Set(context.Background(), key, value, -1).Err()
 	return err
 }
@@ -25,7 +26,7 @@ func Set[T any](key string, value *T) error {
 // key 							键
 // value 						需要插入的值，内部需要进行序列化
 // duration						过期时间
-func SetWithExpireTime[T any](key string, value *T, duration time.Duration) error {
+func SetWithExpireTime(key string, value interface{}, duration time.Duration) error {
 	err := RedisDB.Set(context.Background(), key, value, duration).Err()
 	return err
 }
@@ -33,8 +34,9 @@ func SetWithExpireTime[T any](key string, value *T, duration time.Duration) erro
 // Get 							获取string类型
 // key 							键
 // value 						获取的值存储的指针
-func Get[T any](key string, value *T) error {
+func Get(key string, value interface{}) error {
 	v, err := RedisDB.Get(context.Background(), key).Result()
+	value = &v
 	if err == redis.Nil {
 		fmt.Print("key dose not exist")
 	} else if err != nil {
@@ -48,7 +50,7 @@ func Get[T any](key string, value *T) error {
 // GetAndDelete					获取string并删除string类型
 // key							键
 // value						值
-func GetAndDelete[T any](key string, value *T) error {
+func GetAndDelete(key string, value interface{}) error {
 	v, err := RedisDB.Get(context.Background(), key).Result()
 	if err == redis.Nil {
 		fmt.Print("key dose not exist")
@@ -56,7 +58,7 @@ func GetAndDelete[T any](key string, value *T) error {
 		fmt.Printf("get %v failed, err:%v\n", key, err)
 	}
 	fmt.Printf("get %v succeed, value:%v\n", key, v)
-
+	value = &v
 	_, err = RedisDB.Del(context.Background(), key).Result()
 	if err == redis.Nil {
 		fmt.Print("key dose not exist")
@@ -71,20 +73,21 @@ func GetAndDelete[T any](key string, value *T) error {
 // key						 	键
 // value 						需要插入的值
 // score 						排序字段名，如果没有该字段则不进行排序
-func ZSet[T any](key string, value *[]T, score string) error {
-	addValues := make([]*redis.Z, len(*value))
+func ZSet(key string, value interface{}, score string) error {
+	val := reflect.ValueOf(value)
+	addValues := make([]*redis.Z, val.Len())
 	if score != "" {
 		scoref64, err := strconv.ParseFloat(score, 64)
 		if err != nil {
 		}
-		for _, value := range *value {
+		for _, value := range val.Interface().([]interface{}) {
 			addValues = append(addValues, &redis.Z{
 				Score:  scoref64,
 				Member: value,
 			})
 		}
 	} else {
-		for _, value := range *value {
+		for _, value := range val.Interface().([]interface{}) {
 			addValues = append(addValues, &redis.Z{
 				Member: value,
 			})
@@ -109,27 +112,27 @@ func ZGet(key string, value interface{}) error {
 // value						需要插入的值
 // score						排序字段名，如果没有该字段则不进行排序
 // duration						时间
-func ZSetWithExpireTime[T any](key string, value *[]T, score string, duration time.Duration) error {
+func ZSetWithExpireTime(key string, value interface{}, score string, duration time.Duration) error {
 	ok, _ := RedisDB.Expire(context.Background(), key, duration).Result()
 	if ok {
 		fmt.Println("name 过期时间设置成功", ok)
 	} else {
 		fmt.Println("name 过期时间设置失败", ok)
 	}
-
-	addValues := make([]*redis.Z, len(*value))
+	val := reflect.ValueOf(value)
+	addValues := make([]*redis.Z, val.Len())
 	if score != "" {
 		scoref64, err := strconv.ParseFloat(score, 64)
 		if err != nil {
 		}
-		for _, value := range *value {
+		for _, value := range val.Interface().([]interface{}) {
 			addValues = append(addValues, &redis.Z{
 				Score:  scoref64,
 				Member: value,
 			})
 		}
 	} else {
-		for _, value := range *value {
+		for _, value := range val.Interface().([]interface{}) {
 			addValues = append(addValues, &redis.Z{
 				Member: value,
 			})
