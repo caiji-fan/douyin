@@ -327,7 +327,7 @@ func mergeFeeds(feed1 *[]bo.Feed, feed2 *[]bo.Feed) ([]bo.Feed, error) {
 // 清理收件箱，用户查看一次收件箱后，将收件箱中已经查看过的视频清除
 // trash 已经查看过的feed对象
 func clearInbox(trash *[]bo.Feed, userId int) error {
-	//todo 加锁
+	//todo 加锁,防止清理过程中的新增数据造成影响
 
 	// 获取redis中的数据
 	var feeds []bo.Feed
