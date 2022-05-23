@@ -5,9 +5,12 @@ package controller
 
 import (
 	"douyin/config"
+	"douyin/entity/myerr"
+	"douyin/entity/param"
 	"douyin/entity/response"
 	"douyin/middleware"
 	"douyin/service/serviceimpl"
+	"douyin/util/webutil"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -52,19 +55,19 @@ func Feed(ctx *gin.Context) {
 
 // Publish 		投稿视频
 func Publish(ctx *gin.Context) {
-	// ********************得到token与视频信息********************
 
 	// 通过线程获取投稿人id
 	authorId, err := strconv.Atoi(config.Config.ThreadLocal.Keys.UserId)
 	if err != nil {
-
+		ctx.JSON(http.StatusInternalServerError, response.SystemError)
+		return
 	}
 
 	// 通过请求参数获取视频标题
-	var videoParm param.Video
-	err = ctx.ShouldBindQuery(&videoParm)
+	var videoParam param.Video
+	err = ctx.ShouldBindQuery(&videoParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoParm))))
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoParam))))
 		return
 	}
 
@@ -82,10 +85,11 @@ func Publish(ctx *gin.Context) {
 		return
 	}
 
-	var v serviceimpl.Video
-	err = v.Publish(video, cover, authorId, videoParm.Title)
+	// 发布
+	err = serviceimpl.NewVideoServiceInstance().Publish(video, cover, authorId, videoParam.Title)
 	if err != nil {
 		ctx.JSON(http.StatusProxyAuthRequired, response.ErrorResponse(err))
+		return
 	}
 	ctx.JSON(http.StatusOK, response.PubVideo{
 		Response: response.Ok,
@@ -98,13 +102,13 @@ func VideoList(ctx *gin.Context) {
 	var videoList param.VideoList
 	err := ctx.ShouldBindQuery(&videoList)
 	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoList))))
 		return
 	}
 
-	var v serviceimpl.Video
-	boVideos, err := v.VideoList(videoList.UserID)
+	boVideos, err := serviceimpl.NewVideoServiceInstance().VideoList(videoList.UserID)
 	if err != nil {
-
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(err))
 	}
 	ctx.JSON(http.StatusOK, response.VideoList{
 		Response:  response.Ok,
