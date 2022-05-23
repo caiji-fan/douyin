@@ -7,7 +7,8 @@ package config
 type rabbit struct {
 	Url string `yaml:"url"`
 
-	Queue struct {
+	ResendMax int `yaml:"resend-max"`
+	Queue     struct {
 		ChangeFollowNum string `yaml:"change-follow-num"`
 		UploadVideo     string `yaml:"upload-video"`
 		FeedVideo       string `yaml:"feed-video"`
