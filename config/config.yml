@@ -46,7 +46,7 @@ rabbit:
 # redis配置信息
 redis:
   # redis连接url
-  url: ""
+  url: "localhost:6379"
   # redis键名
   key:
     # 用户token
