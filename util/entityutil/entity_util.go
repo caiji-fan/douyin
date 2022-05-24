@@ -132,6 +132,9 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 // src				用户PO集
 // dest 			用户BO集
 func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
+	if dest == nil || len(*dest) < len(*users) {
+		*dest = make([]bo.User, len(*users))
+	}
 	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
 	uid, err := strconv.Atoi(userId) //查出目前用户的id
 	if err != nil {
@@ -170,7 +173,7 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 		return err
 	}
 	//todo单元测试暂改
-	//uid := 5 //单元测试用
+	//uid := 1 //单元测试用
 	var poFollow po.Follow = po.Follow{
 		FollowId:   uid,
 		FollowerId: (*src).ID,

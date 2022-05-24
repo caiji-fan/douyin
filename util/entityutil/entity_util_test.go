@@ -67,9 +67,33 @@ func TestGetUserBOS(t *testing.T) {
 	}
 	var dest []bo.User = make([]bo.User, 5)
 	GetUserBOS(&users, &dest)
+	fmt.Print("容量充足的情况下：")
+	fmt.Println(len(dest))
 	for _, des := range dest {
 		fmt.Println(des)
 	}
+
+	var dest1 []bo.User
+	GetUserBOS(&users, &dest1)
+	fmt.Print("没初始化的情况下：")
+	fmt.Println(len(dest1))
+	for _, des := range dest1 {
+		fmt.Println(des)
+	}
+
+	var dest2 []bo.User = make([]bo.User, 0)
+	GetUserBOS(&users, &dest2)
+	fmt.Print("容量不足的情况下：")
+	fmt.Println(len(dest2))
+	for _, des := range dest2 {
+		fmt.Println(des)
+	}
+}
+func TestGetUserBO(t *testing.T) {
+	src := po.User{po.EntityModel{7, "141", "222"}, "李文静", "siw", 99, 90}
+	var dest bo.User
+	GetUserBO(&src, &dest)
+	fmt.Println(dest)
 }
 func TestGetVideoBOS(t *testing.T) {
 	var videos []po.Video = []po.Video{
