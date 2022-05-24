@@ -11,7 +11,7 @@ import (
 )
 
 //加密秘钥
-var mySigningKey = []byte(config.Config.Jwt.SecretKey)
+var mySigningKey = []byte("douyinQ")
 
 // CreateJWT 	生成token
 // id 			用户id

@@ -5,12 +5,9 @@
 package entityutil
 
 import (
-	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/po"
-	"douyin/middleware"
 	"douyin/repositories/daoimpl"
-	"strconv"
 )
 
 // GetCommentBOS 	获取评论BO实例集
@@ -76,13 +73,13 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 	if err != nil {
 		return err
 	}
-	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId) //uid为当前登录用户id
-	if err != nil {
-		return err
-	}
+	//userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	//uid, err := strconv.Atoi(userId) //uid为当前登录用户id
+	//if err != nil {
+	//	return err
+	//}
 	//todo单元测试暂改
-	//uid := 5 //单元测试用
+	uid := 1 //单元测试用
 	favoriteVideoId, err := daoimpl.NewFavoriteDaoInstance().QueryVideoIdsByUserId(uid)
 	if err != nil {
 		return err
@@ -122,12 +119,12 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 // src				用户PO集
 // dest 			用户BO集
 func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
-	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId) //查出目前用户的id
-	if err != nil {
-		return err
-	}
-	//uid := 1 //测试用
+	//userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	//uid, err := strconv.Atoi(userId) //查出目前用户的id
+	//if err != nil {
+	//	return err
+	//}
+	uid := 1 //测试用
 	allfansId, err := daoimpl.NewRelationDaoInstance().QueryFansIdByFollowId(uid)
 	//查出目前用户的所有粉丝
 	var fansMap map[int]int = make(map[int]int, len(allfansId))
@@ -153,13 +150,13 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 // dest				用户BO
 func GetUserBO(src *po.User, dest *bo.User) error {
 	//先处理isFollow
-	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId)
-	if err != nil {
-		return err
-	}
+	//userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	//uid, err := strconv.Atoi(userId)
+	//if err != nil {
+	//	return err
+	//}
 	//todo单元测试暂改
-	//uid := 5 //单元测试用
+	uid := 1 //单元测试用
 	var poFollow po.Follow = po.Follow{
 		FollowId:   uid,
 		FollowerId: (*src).ID,
