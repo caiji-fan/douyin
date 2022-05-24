@@ -1,7 +1,7 @@
+// Package config
 /**
  * @Author yg
  * @Date 2022-05-20
- * @Description
  **/
 package config
 
