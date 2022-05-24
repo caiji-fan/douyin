@@ -16,7 +16,7 @@ func TestMain(t *testing.M) {
 
 // 正常
 func TestRedisUtil_Set(t *testing.T) {
-	err := Set("test1", "succeed!!")
+	err := Set("test2", "congratulation! you are succeed!!")
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		panic(err)
@@ -31,31 +31,32 @@ func TestRedisUtil_Get(t *testing.T) {
 		fmt.Printf("err: %v\n", err)
 		panic(err)
 	}
-	fmt.Printf("val: %v", val)
+	fmt.Printf("val: %v\n", val)
 }
 
-// 正常
+// 正常，经过客户端测试会发现确实删掉了，但是缓存的原因这里还可以搜索到
 func TestRedisUtil_GetAndDelete(t *testing.T) {
 	var val interface{}
-	err := GetAndDelete("test2", &val)
+	err := GetAndDelete("test4", &val)
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		panic(err)
 	}
-	fmt.Printf("val: %v", val)
+	fmt.Printf("val: %v\n", val)
 }
 
 // 正常
 func TestRedisUtil_SetWithExpireTime(t *testing.T) {
-	err := SetWithExpireTime("test2", "t2 not timeout!", 30000000000)
+	err := SetWithExpireTime("test2", "t2 not timeout!", 300000000000)
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		panic(err)
 	}
 }
 
+// 正常
 func TestRedisUtil_ZSet(t *testing.T) {
-	var zsetSimple = []string{"milk"}
+	var zsetSimple = []string{"milk", "coffee", "tea"}
 	err := ZSet("ZZZtest2", zsetSimple, "100")
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
@@ -63,8 +64,10 @@ func TestRedisUtil_ZSet(t *testing.T) {
 	}
 }
 
+// 正常
 func TestRedisUtil_ZSetWithExpireTime(t *testing.T) {
-	err := ZSetWithExpireTime("ZZZtest2", "milk", "100", 30000000000)
+	var zsetSimple = []string{"milk", "bear", "tea"}
+	err := ZSetWithExpireTime("ZZZtest3", zsetSimple, "100", 10000000000) // 10s
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		panic(err)
@@ -74,7 +77,7 @@ func TestRedisUtil_ZSetWithExpireTime(t *testing.T) {
 // 正常
 func TestRedisUtil_ZGet(t *testing.T) {
 	var val interface{}
-	err := ZGet("ZZZtest1", &val)
+	err := ZGet("ZZZtest3", &val)
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		panic(err)

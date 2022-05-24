@@ -5,20 +5,19 @@
 package redisutil
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis"
 )
 
 // Set 							插入string类型
 // key 							键
 // value 						需要插入的值，内部需要进行序列化
 func Set(key string, value interface{}) error {
-	err := RedisDB.Set(context.Background(), key, value, 0).Err()
+	err := RedisDB.Set(key, value, 0).Err()
 	return err
 }
 
@@ -27,7 +26,7 @@ func Set(key string, value interface{}) error {
 // value 						需要插入的值，内部需要进行序列化
 // duration						过期时间
 func SetWithExpireTime(key string, value interface{}, duration time.Duration) error {
-	err := RedisDB.Set(context.Background(), key, value, duration).Err()
+	err := RedisDB.Set(key, value, duration).Err()
 	return err
 }
 
@@ -35,11 +34,11 @@ func SetWithExpireTime(key string, value interface{}, duration time.Duration) er
 // key 							键
 // value 						获取的值存储的指针
 func Get(key string, value *interface{}) error {
-	v, err := RedisDB.Get(context.Background(), key).Result()
+	v, err := RedisDB.Get(key).Result()
 	val := reflect.ValueOf(v)
 	*value = val.Interface()
 	if err == redis.Nil {
-		fmt.Print("key dose not exist")
+		fmt.Print("key dose not exist\n")
 	} else if err != nil {
 		fmt.Printf("get %v failed, err:%v\n", key, err)
 		return err
@@ -53,9 +52,9 @@ func Get(key string, value *interface{}) error {
 // value						值
 func GetAndDelete(key string, value *interface{}) error {
 	// Get
-	v, err := RedisDB.Get(context.Background(), key).Result()
+	v, err := RedisDB.Get(key).Result()
 	if err == redis.Nil {
-		fmt.Print("key dose not exist")
+		fmt.Print("key dose not exist\n")
 	} else if err != nil {
 		fmt.Printf("get %v failed, err:%v\n", key, err)
 	}
@@ -63,9 +62,9 @@ func GetAndDelete(key string, value *interface{}) error {
 	val := reflect.ValueOf(v)
 	*value = val.Interface()
 	// Delete
-	_, err = RedisDB.Del(context.Background(), key).Result()
+	_, err = RedisDB.Del(key).Result()
 	if err == redis.Nil {
-		fmt.Print("key dose not exist")
+		fmt.Print("key dose not exist\n")
 	} else if err != nil {
 		fmt.Printf("del %v failed, err:%v\n", key, err)
 	}
@@ -79,27 +78,26 @@ func GetAndDelete(key string, value *interface{}) error {
 // score 						排序字段名，如果没有该字段则不进行排序
 func ZSet(key string, value interface{}, score string) error {
 	val := reflect.ValueOf(value)
-	addValues := make([]*redis.Z, val.Len())
+	addValues := make([]redis.Z, val.Len())
 	fmt.Printf("val.Len = %v\n", val.Len())
 	if score != "" {
 		scoref64, err := strconv.ParseFloat(score, 64)
 		if err != nil {
 		}
-		for _, value := range val.Interface().([]interface{}) {
-			addValues = append(addValues, &redis.Z{
+		for i := 0; i < val.Len(); i++ {
+			addValues = append(addValues, redis.Z{
 				Score:  scoref64,
-				Member: value,
+				Member: val.Index(i).Interface(),
 			})
 		}
 	} else { // 没有设置权值则权值设为默认值0
-		for _, value := range val.Interface().([]interface{}) {
-			addValues = append(addValues, &redis.Z{
-				Score:  0,
-				Member: value,
+		for i := 0; i < val.Len(); i++ {
+			addValues = append(addValues, redis.Z{
+				Member: val.Index(i).Interface(),
 			})
 		}
 	}
-	_, err := RedisDB.ZAdd(context.Background(), key, addValues...).Result()
+	_, err := RedisDB.ZAdd(key, addValues...).Result()
 	return err
 }
 
@@ -107,7 +105,7 @@ func ZSet(key string, value interface{}, score string) error {
 // key 							键
 // value 						获取的值存储的指针
 func ZGet(key string, value *interface{}) error {
-	score, err := RedisDB.ZRange(context.Background(), key, 0, -1).Result()
+	score, err := RedisDB.ZRange(key, 0, -1).Result()
 	fmt.Printf("zget 获得值：%v", score)
 	val := reflect.ValueOf(score)
 	*value = val.Interface()
@@ -120,31 +118,31 @@ func ZGet(key string, value *interface{}) error {
 // score						排序字段名，如果没有该字段则不进行排序
 // duration						时间
 func ZSetWithExpireTime(key string, value interface{}, score string, duration time.Duration) error {
-	ok, _ := RedisDB.Expire(context.Background(), key, duration).Result()
-	if ok {
-		fmt.Println("name 过期时间设置成功", ok)
-	} else {
-		fmt.Println("name 过期时间设置失败", ok)
-	}
 	val := reflect.ValueOf(value)
-	addValues := make([]*redis.Z, val.Len())
+	addValues := make([]redis.Z, val.Len())
 	if score != "" {
 		scoref64, err := strconv.ParseFloat(score, 64)
 		if err != nil {
 		}
-		for _, value := range val.Interface().([]interface{}) {
-			addValues = append(addValues, &redis.Z{
+		for i := 0; i < val.Len(); i++ {
+			addValues = append(addValues, redis.Z{
 				Score:  scoref64,
-				Member: value,
+				Member: val.Index(i).Interface(),
 			})
 		}
 	} else {
-		for _, value := range val.Interface().([]interface{}) {
-			addValues = append(addValues, &redis.Z{
-				Member: value,
+		for i := 0; i < val.Len(); i++ {
+			addValues = append(addValues, redis.Z{
+				Member: val.Index(i).Interface(),
 			})
 		}
 	}
-	_, err := RedisDB.ZAdd(context.Background(), key, addValues...).Result()
+	_, err := RedisDB.ZAdd(key, addValues...).Result()
+	ok, _ := RedisDB.Expire(key, duration).Result()
+	if ok {
+		fmt.Println("name 过期时间设置成功")
+	} else {
+		fmt.Println("name 过期时间设置失败")
+	}
 	return err
 }
