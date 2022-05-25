@@ -1,11 +1,10 @@
 package redisutil
 
 import (
-	"context"
 	"douyin/config"
 	"fmt"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis"
 )
 
 var RedisDB *redis.Client
@@ -19,7 +18,7 @@ func Init() {
 		DB:       0,
 	})
 
-	err := RedisDB.Ping(context.Background()).Err()
+	err := RedisDB.Ping().Err()
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 	}
