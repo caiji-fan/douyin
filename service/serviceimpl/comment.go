@@ -78,7 +78,7 @@ func (c Comment) CommentList(videoId int) (*[]bo.Comment, error) {
 		return nil, err
 	}
 	//转换
-	var commentBos = make([]bo.Comment, len(*comments))
+	var commentBos []bo.Comment
 	err = entityutil.GetCommentBOS(comments, &commentBos)
 	if err != nil {
 		return nil, err
