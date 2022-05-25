@@ -34,10 +34,10 @@ func SetWithExpireTime(key string, value interface{}, duration time.Duration) er
 // Get 							获取string类型
 // key 							键
 // value 						获取的值存储的指针
-func Get(key string, value *interface{}) error {
+func Get(key string, value interface{}) error {
 	v, err := RedisDB.Get(context.Background(), key).Result()
 	val := reflect.ValueOf(v)
-	*value = val.Interface()
+	value = val.Interface()
 	if err == redis.Nil {
 		fmt.Print("key dose not exist")
 	} else if err != nil {
@@ -51,7 +51,7 @@ func Get(key string, value *interface{}) error {
 // GetAndDelete					获取string并删除string类型
 // key							键
 // value						值
-func GetAndDelete(key string, value *interface{}) error {
+func GetAndDelete(key string, value interface{}) error {
 	// Get
 	v, err := RedisDB.Get(context.Background(), key).Result()
 	if err == redis.Nil {
@@ -61,7 +61,7 @@ func GetAndDelete(key string, value *interface{}) error {
 	}
 	fmt.Printf("get %v succeed, value:%v\n", key, v)
 	val := reflect.ValueOf(v)
-	*value = val.Interface()
+	value = val.Interface()
 	// Delete
 	_, err = RedisDB.Del(context.Background(), key).Result()
 	if err == redis.Nil {
@@ -106,11 +106,11 @@ func ZSet(key string, value interface{}, score string) error {
 // ZGet 						获取set类型
 // key 							键
 // value 						获取的值存储的指针
-func ZGet(key string, value *interface{}) error {
+func ZGet(key string, value interface{}) error {
 	score, err := RedisDB.ZRange(context.Background(), key, 0, -1).Result()
 	fmt.Printf("zget 获得值：%v", score)
 	val := reflect.ValueOf(score)
-	*value = val.Interface()
+	value = val.Interface()
 	return err
 }
 
@@ -147,4 +147,14 @@ func ZSetWithExpireTime(key string, value interface{}, score string, duration ti
 	}
 	_, err := RedisDB.ZAdd(context.Background(), key, addValues...).Result()
 	return err
+}
+
+// Keys 匹配键集
+//prefix 键前缀
+func Keys(prefix string, value []string) error {
+	return nil
+}
+
+func GetExpireTime(key string) (time.Duration, error) {
+	return 0, nil
 }
