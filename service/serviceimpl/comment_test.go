@@ -45,7 +45,6 @@ func TestComment_Comment2(t *testing.T) {
 }
 
 func TestComment_CommentList(t *testing.T) {
-	// todo 评论实体转换工具存在问题，转换后的结果为默认值
 	commentService := NewCommentServiceInstance()
 	list, err := commentService.CommentList(1)
 	if err != nil {
