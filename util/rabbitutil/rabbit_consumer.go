@@ -261,7 +261,8 @@ func doFeedVideo(videoId int) error {
 	if err != nil {
 		return err
 	}
-	var videos = make([]bo.Feed, 10)
+	// todo redis事务
+	var videos []bo.Feed
 	//大v用户
 	if sender.FollowCount >= config.Config.Service.BigVNum {
 		err = redisutil.ZGet(config.Config.Redis.Key.Outbox+strconv.Itoa(sender.ID), &videos)
@@ -288,20 +289,24 @@ func doFeedVideo(videoId int) error {
 		}
 		// feed集合，用户持久化
 		// todo 增加redis事务控制
-		var feeds = make([]po.Feed, len(*users))
-		for index, user := range *users {
+		var feeds = make([]po.Feed, 0)
+		for _, user := range *users {
 			err = redisutil.ZGet(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID), &videos)
 			if err != nil {
 				return err
 			}
-			videos = append(videos, bo.Feed{VideoId: videoId, CreateTime: video.CreateTime})
-			err = redisutil.ZSetWithExpireTime(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID),
-				&videos,
-				"CreateTime",
-				config.InboxExpireTime)
-			feeds[index] = po.Feed{UserId: user.ID, VideoId: videoId}
-			if err != nil {
-				return err
+			// 不存在收件箱，则入库
+			if videos == nil {
+				feeds = append(feeds, po.Feed{UserId: user.ID, VideoId: videoId})
+			} else {
+				videos = append(videos, bo.Feed{VideoId: videoId, CreateTime: video.CreateTime})
+				err = redisutil.ZSetWithExpireTime(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID),
+					&videos,
+					"CreateTime",
+					config.InboxExpireTime)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		feedDao := daoimpl.NewFeedDaoInstance()

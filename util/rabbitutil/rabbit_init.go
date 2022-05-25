@@ -31,7 +31,7 @@ func Init() {
 		log.Fatalln(err)
 	}
 	// 开始监听消费
-	//initConsumer()
+	initConsumer()
 }
 
 // 声明交换机
@@ -75,9 +75,9 @@ func producerInit(exchange, queue, key string) error {
 	}
 	// 声明绑定
 	err = initBinding(
-		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.FeedVideo,
-		config.Config.Rabbit.Key.FeedVideo,
+		exchange,
+		queue,
+		key,
 	)
 	if err != nil {
 		return err
