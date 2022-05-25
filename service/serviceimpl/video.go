@@ -157,7 +157,10 @@ func (v Video) Publish(video *multipart.FileHeader, cover *multipart.FileHeader,
 			AuthorId:      userId,
 			Title:         title,
 		}
-		videoDB.Insert(&dbinstance)
+		err = videoDB.Insert(&dbinstance)
+		if err != nil {
+			return
+		}
 	}()
 	// 消息队列异步将视频加入feed流
 	// 正确响应
@@ -173,7 +176,10 @@ func (v Video) VideoList(userId int) ([]bo.Video, error) {
 	}
 	var boVideoList []bo.Video = make([]bo.Video, len(*poVideoList))
 	// po列表转bo
-	entityutil.GetVideoBOS(poVideoList, &boVideoList)
+	err = entityutil.GetVideoBOS(poVideoList, &boVideoList)
+	if err != nil {
+		return nil, err
+	}
 	return boVideoList, nil
 }
 
@@ -240,6 +246,7 @@ func fromOutbox(userId int) ([]bo.Feed, error) {
 func mergeBox(inbox *[]bo.Feed, outbox *[]bo.Feed, latestTime int64) ([]int, error) {
 	var videoIds = make([]int, config.Config.Service.PageSize)
 	var inboxIndex, outboxIndex = 0, 0
+
 	for inboxIndex < len(*inbox) && outboxIndex < len(*outbox) {
 		inboxTime, err := time.Parse(config.Config.StandardTime, (*inbox)[inboxIndex].CreateTime)
 		if err != nil {
@@ -296,6 +303,7 @@ func mergeBox(inbox *[]bo.Feed, outbox *[]bo.Feed, latestTime int64) ([]int, err
 func mergeFeeds(feed1 *[]bo.Feed, feed2 *[]bo.Feed) ([]bo.Feed, error) {
 	var index1, index2 = 0, 0
 	var feeds = make([]bo.Feed, len(*feed1)+len(*feed2))
+
 	for index1 < len(*feed1) && index2 < len(*feed2) {
 		time1, err := time.Parse(config.Config.StandardTime, (*feed1)[index1].CreateTime)
 		if err != nil {

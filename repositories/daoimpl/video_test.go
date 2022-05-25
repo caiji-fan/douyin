@@ -1,6 +1,7 @@
 package daoimpl
 
 import (
+	"douyin/entity/po"
 	"fmt"
 	"log"
 	"testing"
@@ -25,7 +26,6 @@ func TestVideo_QueryForUpdate(t *testing.T) {
 	}
 	fmt.Println(video)
 }
-
 
 func TestVideoDaoImpl_Insert(t *testing.T) {
 	videoDao := NewVideoDaoInstance()
