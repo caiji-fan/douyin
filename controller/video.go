@@ -54,13 +54,7 @@ func Publish(ctx *gin.Context) {
 	}
 
 	var v serviceimpl.Video
-	err = v.Publish(video, cover, authorId, videoParm.Title)
-	if err != nil {
-		ctx.JSON(http.StatusProxyAuthRequired, response.ErrorResponse(err))
-	}
-	ctx.JSON(http.StatusOK, response.PubVideo{
-		Response: response.Ok,
-	})
+	v.Publish(ctx, video, cover, authorId, videoParm.Title)
 }
 
 // VideoList 	查看视频发布列表
