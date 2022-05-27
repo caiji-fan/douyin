@@ -33,10 +33,10 @@ func SetWithExpireTime(key string, value interface{}, duration time.Duration) er
 // Get 							获取string类型
 // key 							键
 // value 						获取的值存储的指针
-func Get(key string, value *interface{}) error {
+func Get(key string, value interface{}) error {
 	v, err := RedisDB.Get(key).Result()
 	val := reflect.ValueOf(v)
-	*value = val.Interface()
+	value = val.Interface()
 	if err == redis.Nil {
 		fmt.Print("key dose not exist\n")
 	} else if err != nil {
@@ -50,7 +50,7 @@ func Get(key string, value *interface{}) error {
 // GetAndDelete					获取string并删除string类型
 // key							键
 // value						值
-func GetAndDelete(key string, value *interface{}) error {
+func GetAndDelete(key string, value interface{}) error {
 	// Get
 	v, err := RedisDB.Get(key).Result()
 	if err == redis.Nil {
@@ -60,7 +60,7 @@ func GetAndDelete(key string, value *interface{}) error {
 	}
 	fmt.Printf("get %v succeed, value:%v\n", key, v)
 	val := reflect.ValueOf(v)
-	*value = val.Interface()
+	value = val.Interface()
 	// Delete
 	_, err = RedisDB.Del(key).Result()
 	if err == redis.Nil {
@@ -104,11 +104,11 @@ func ZSet(key string, value interface{}, score string) error {
 // ZGet 						获取set类型
 // key 							键
 // value 						获取的值存储的指针
-func ZGet(key string, value *interface{}) error {
+func ZGet(key string, value interface{}) error {
 	score, err := RedisDB.ZRange(key, 0, -1).Result()
 	fmt.Printf("zget 获得值：%v", score)
 	val := reflect.ValueOf(score)
-	*value = val.Interface()
+	value = val.Interface()
 	return err
 }
 
@@ -145,4 +145,32 @@ func ZSetWithExpireTime(key string, value interface{}, score string, duration ti
 		fmt.Println("name 过期时间设置失败")
 	}
 	return err
+}
+
+// Keys 获取匹配的键集
+func Keys(prefix string, keys *[]string) error {
+	res := RedisDB.Keys(prefix + "*")
+	*keys = res.Val()
+	return res.Err()
+}
+
+// GetExpireTime 获取的键值的过期时间
+func GetExpireTime(key string) (time.Duration, error) {
+	res := RedisDB.TTL(key)
+	return res.Val(), res.Err()
+}
+
+// Lock 加锁
+func Lock(key string, expireTime time.Duration) (bool, error) {
+	return false, nil
+}
+
+// Unlock 解锁
+func Unlock(key string) error {
+	return nil
+}
+
+// Begin 开启事务
+func Begin() redis.Pipeliner {
+	return RedisDB.TxPipeline()
 }

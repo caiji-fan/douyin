@@ -3,6 +3,7 @@ package redisutil
 import (
 	"douyin/config"
 	"fmt"
+	"log"
 	"reflect"
 	"testing"
 )
@@ -10,7 +11,6 @@ import (
 func TestMain(t *testing.M) {
 	config.Init()
 	Init()
-	fmt.Printf("初始化完成\n")
 	t.Run()
 }
 
@@ -83,4 +83,23 @@ func TestRedisUtil_ZGet(t *testing.T) {
 		panic(err)
 	}
 	fmt.Printf("type: %v, val: %v\n", reflect.TypeOf(val), val)
+}
+
+// pass
+func TestKeys(t *testing.T) {
+	var keys []string
+	err := Keys("name", &keys)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(keys)
+}
+
+// pass
+func TestGetExpireTime(t *testing.T) {
+	ttl, err := GetExpireTime("name:1")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(ttl)
 }

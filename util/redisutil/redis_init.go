@@ -2,7 +2,7 @@ package redisutil
 
 import (
 	"douyin/config"
-	"fmt"
+	"log"
 
 	"github.com/go-redis/redis"
 )
@@ -17,9 +17,8 @@ func Init() {
 		Password: "",
 		DB:       0,
 	})
-
 	err := RedisDB.Ping().Err()
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
+		log.Fatalln(err)
 	}
 }
