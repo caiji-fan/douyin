@@ -5,15 +5,21 @@
 package entityutil
 
 import (
+	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/po"
+	"douyin/middleware"
 	"douyin/repositories/daoimpl"
+	"strconv"
 )
 
 // GetCommentBOS 	获取评论BO实例集
 // src				评论PO集
 // dest 			评论bo集
 func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
+	if dest == nil || len(*dest) < len(*src) {
+		*dest = make([]bo.Comment, len(*src))
+	}
 	var i = 0
 	var ids = make([]int, len(*src), len(*src)*4)
 	var cu = make(map[int][]*po.Comment, len(*src))
@@ -31,6 +37,7 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 	if err != nil {
 		return err
 	}
+	i = 0
 	for _, userPo := range *userList {
 		c1s := cu[userPo.ID]
 		//将po数据库user转换为bo业务user
@@ -45,9 +52,10 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 				ID:         c1.ID,  //bo评论id
 				User:       userBo, //bo业务user对象
 				Content:    c1.Content,
-				CreateDate: c1.CreateTime,
+				CreateDate: c1.CreateTime.Format("01-02"),
 			}
-			*dest = append(*dest, commentBo)
+			(*dest)[i] = commentBo
+			i++
 		}
 	}
 	return nil
@@ -57,6 +65,9 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 // src				视频PO集
 // dest				视频BO集
 func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
+	if dest == nil || len(*dest) < len(*src) {
+		*dest = make([]bo.Video, len(*src))
+	}
 	var ids = make([]int, len(*src), len(*src)*4)
 	var videosMap = make(map[int][]*po.Video, len(*src))
 	//key是作者id,value是视频切片
@@ -73,21 +84,22 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 	if err != nil {
 		return err
 	}
-	//userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	//uid, err := strconv.Atoi(userId) //uid为当前登录用户id
-	//if err != nil {
-	//	return err
-	//}
+	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	uid, err := strconv.Atoi(userId) //uid为当前登录用户id
+	if err != nil {
+		return err
+	}
 	//todo单元测试暂改
-	uid := 1 //单元测试用
+	//uid := 5 //单元测试用
 	favoriteVideoId, err := daoimpl.NewFavoriteDaoInstance().QueryVideoIdsByUserId(uid)
 	if err != nil {
 		return err
 	}
-	var favoriteVideoIdMap map[int]int = make(map[int]int, len(favoriteVideoId))
+	var favoriteVideoIdMap = make(map[int]int, len(favoriteVideoId))
 	for _, videoId := range favoriteVideoId {
 		favoriteVideoIdMap[videoId] = uid
 	} //key=视频id(当前登录用户喜欢的所有视频),value=当前登录用户id
+	var i = 0
 	for _, userPo := range *userList {
 		videos := videosMap[userPo.ID]
 		//将po数据库user转换为bo业务user
@@ -109,7 +121,8 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 			}
 			_, boool := favoriteVideoIdMap[video.ID]
 			videoBo.IsFavorite = boool
-			*dest = append(*dest, videoBo)
+			(*dest)[i] = videoBo
+			i++
 		}
 	}
 	return nil
@@ -119,19 +132,23 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 // src				用户PO集
 // dest 			用户BO集
 func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
-	//userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	//uid, err := strconv.Atoi(userId) //查出目前用户的id
-	//if err != nil {
-	//	return err
-	//}
-	uid := 1 //测试用
-	allfansId, err := daoimpl.NewRelationDaoInstance().QueryFansIdByFollowId(uid)
-	//查出目前用户的所有粉丝
-	var fansMap map[int]int = make(map[int]int, len(allfansId))
+	if dest == nil || len(*dest) < len(*users) {
+		*dest = make([]bo.User, len(*users))
+	}
+	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	uid, err := strconv.Atoi(userId) //查出目前用户的id
 	if err != nil {
 		return err
 	}
-	for _, fan := range allfansId {
+	//todo测试用
+	//uid := 1 //测试用
+	allFansId, err := daoimpl.NewRelationDaoInstance().QueryFansIdByFollowId(uid)
+	//查出目前用户的所有粉丝
+	var fansMap = make(map[int]int, len(allFansId))
+	if err != nil {
+		return err
+	}
+	for _, fan := range allFansId {
 		fansMap[fan] = uid //key=粉丝id；value=目前用户id
 	}
 	for i, poUser := range *users {
@@ -150,14 +167,14 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 // dest				用户BO
 func GetUserBO(src *po.User, dest *bo.User) error {
 	//先处理isFollow
-	//userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	//uid, err := strconv.Atoi(userId)
-	//if err != nil {
-	//	return err
-	//}
+	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+	uid, err := strconv.Atoi(userId)
+	if err != nil {
+		return err
+	}
 	//todo单元测试暂改
-	uid := 1 //单元测试用
-	var poFollow po.Follow = po.Follow{
+	//uid := 1 //单元测试用
+	var poFollow = po.Follow{
 		FollowId:   uid,
 		FollowerId: (*src).ID,
 	}
@@ -176,4 +193,17 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 	dest.FollowCount = src.FollowCount
 	dest.FollowerCount = src.FollowerCount
 	return nil
+}
+
+// GetFeedBOS 	将FeedPo集合转化为FeedBo集合
+// src			FeedPO集合
+// dest			FeedBO集合
+func GetFeedBOS(src *[]po.Feed, dest *[]bo.Feed) {
+	if dest == nil || cap(*dest) < len(*src) {
+		temp := make([]bo.Feed, len(*src))
+		dest = &temp
+	}
+	for index, feed := range *src {
+		(*dest)[index] = bo.Feed{VideoId: feed.VideoId, CreateTime: feed.CreateTime}
+	}
 }

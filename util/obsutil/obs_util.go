@@ -36,7 +36,7 @@ func Upload(filePath string, bucketName string) (string, error) {
 			return "", err
 		}
 	}
-	var objectName = strings.ReplaceAll(getUUID(), "-", "") + strings.ToLower(filePath[strings.LastIndex(filePath, "."):])
+	var objectName = ParseFileName(filePath)
 	err = doUpload(filePath, bucketName, client, objectName)
 	if err != nil {
 		return "", err
@@ -116,4 +116,10 @@ func doUpload(filePath string, bucketName string, client *obs.ObsClient, objectN
 func getUUID() string {
 	UUID := uuid.NewV4()
 	return UUID.String()
+}
+
+// ParseFileName 解析文件名，创建一个唯一文件名
+// originName 源文件名
+func ParseFileName(originName string) string {
+	return strings.ReplaceAll(getUUID(), "-", "") + strings.ToLower(originName[strings.LastIndex(originName, "."):])
 }

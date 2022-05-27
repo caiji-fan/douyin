@@ -71,7 +71,7 @@ func doLike(videoId, userId int, wait *sync.WaitGroup, tx *gorm.DB) error {
 	go func() {
 		defer wait.Done()
 		var video *po.Video
-		video, err = daoimpl.NewVideoDaoInstance().QueryForUpdate(videoId)
+		video, err = daoimpl.NewVideoDaoInstance().QueryForUpdate(videoId, tx)
 		if err != nil {
 			return
 		}
@@ -104,7 +104,7 @@ func cancelLike(videoId, userId int, wait *sync.WaitGroup, tx *gorm.DB) error {
 	go func() {
 		defer wait.Done()
 		var video *po.Video
-		video, err = daoimpl.NewVideoDaoInstance().QueryForUpdate(videoId)
+		video, err = daoimpl.NewVideoDaoInstance().QueryForUpdate(videoId, tx)
 		if err != nil {
 			return
 		}

@@ -4,6 +4,8 @@
 package config
 
 type service struct {
-	BigVNum int    `yaml:"big-v-num"`
-	TempDir string `yaml:"temp-dir"`
+	BigVNum      int    `yaml:"big-v-num"`
+	VideoTempDir string `yaml:"video-temp-dir"`
+	CoverTempDir string `yaml:"cover-temp-dir"`
+	PageSize     int    `yaml:"page-size"`
 }

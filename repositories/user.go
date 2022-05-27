@@ -27,7 +27,7 @@ type User interface {
 	// QueryForUpdate 	加锁查询
 	// userId  			用户id
 	// @return			用户数据
-	QueryForUpdate(userId int) (*po.User, error)
+	QueryForUpdate(userId int, tx *gorm.DB) (*po.User, error)
 
 	// UpdateByCondition 条件更新
 	// user 			更新数据
@@ -36,12 +36,12 @@ type User interface {
 	UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error
 
 	Begin() (tx *gorm.DB)
-	// QueryByName		通过已有的属性查询
+	// QueryByCondition		通过已有的属性查询
 	// user				用户
 	// @return 			用户切片
 	QueryByCondition(user *po.User) (*[]po.User, error)
 
-	//QueryFollow 查询关注列表并且时间倒序
+	//QueryFollows 查询关注列表并且时间倒序
 	QueryFollows(userId int) (*[]po.User, error)
 
 	//QueryFans 查询粉丝列表并且时间倒序

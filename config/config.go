@@ -7,18 +7,25 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"time"
+)
+
+var (
+	OutboxExpireTime time.Duration
+	InboxExpireTime  time.Duration
 )
 
 // Config 配置信息
 type config struct {
-	DB          database    `yaml:"database"`
-	Redis       redis       `yaml:"redis"`
-	Rabbit      rabbit      `yaml:"rabbit"`
-	Server      server      `yaml:"server"`
-	Obs         obs         `yaml:"obs"`
-	Service     service     `yaml:"service"`
-	ThreadLocal threadLocal `yaml:"thread-local"`
-	Jwt         jwt         `yaml:"jwt"`
+	DB           database    `yaml:"database"`
+	Redis        redis       `yaml:"redis"`
+	Rabbit       rabbit      `yaml:"rabbit"`
+	Server       server      `yaml:"server"`
+	Obs          obs         `yaml:"obs"`
+	Service      service     `yaml:"service"`
+	ThreadLocal  threadLocal `yaml:"thread-local"`
+	Jwt          jwt         `yaml:"jwt"`
+	StandardTime string      `yaml:"standard-time"`
 }
 
 // Config 全局配置实例
@@ -41,4 +48,13 @@ func readConfig() {
 func Init() {
 	Config = &config{}
 	readConfig()
+	var err error
+	OutboxExpireTime, err = time.ParseDuration(Config.Redis.ExpireTime.Outbox)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	InboxExpireTime, err = time.ParseDuration(Config.Redis.ExpireTime.Inbox)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
