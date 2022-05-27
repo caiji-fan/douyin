@@ -11,6 +11,7 @@ import (
 	"douyin/util/obsutil"
 	"douyin/util/redisutil"
 	"encoding/json"
+	"github.com/go-redis/redis"
 	"log"
 	"strconv"
 	"sync"
@@ -237,6 +238,10 @@ func doUploadVideo(videoId int) error {
 	if err != nil {
 		return err
 	}
+	// 如果是视频不存在，结束处理
+	if video.ID == 0 {
+		return nil
+	}
 	//上传视频
 	url, err := obsutil.Upload(video.PlayUrl, config.Config.Obs.Buckets.Video)
 	video.PlayUrl = url
@@ -257,11 +262,14 @@ func doFeedVideo(videoId int) error {
 	if err != nil {
 		return err
 	}
+	// 如果是视频不存在，结束处理
+	if video.ID == 0 {
+		return nil
+	}
 	sender, err := daoimpl.NewUserDaoInstance().QueryById(video.AuthorId)
 	if err != nil {
 		return err
 	}
-	// todo redis事务
 	var videos []bo.Feed
 	//大v用户
 	if sender.FollowCount >= config.Config.Service.BigVNum {
@@ -270,10 +278,18 @@ func doFeedVideo(videoId int) error {
 			return err
 		}
 		videos = append(videos, bo.Feed{VideoId: videoId, CreateTime: video.CreateTime})
+		var value = make([]redis.Z, len(videos))
+		for i, v := range videos {
+			value[i] = redis.Z{
+				Score:  float64(v.CreateTime.UnixMilli()),
+				Member: v,
+			}
+		}
 		err = redisutil.ZSetWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(sender.ID),
-			&videos,
-			"CreateTime",
-			config.OutboxExpireTime)
+			value,
+			config.OutboxExpireTime,
+			false,
+			nil)
 		if err != nil {
 			return err
 		}
@@ -287,8 +303,9 @@ func doFeedVideo(videoId int) error {
 		if err != nil {
 			return err
 		}
+		// 创建redis事务处理
+		var pipeline = redisutil.Begin()
 		// feed集合，用户持久化
-		// todo 增加redis事务控制
 		var feeds = make([]po.Feed, 0)
 		for _, user := range *users {
 			err = redisutil.ZGet(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID), &videos)
@@ -300,20 +317,45 @@ func doFeedVideo(videoId int) error {
 				feeds = append(feeds, po.Feed{UserId: user.ID, VideoId: videoId})
 			} else {
 				videos = append(videos, bo.Feed{VideoId: videoId, CreateTime: video.CreateTime})
+				var value = make([]redis.Z, len(videos))
+				for i, v := range videos {
+					value[i] = redis.Z{
+						Score:  float64(v.CreateTime.UnixMilli()),
+						Member: v,
+					}
+				}
 				err = redisutil.ZSetWithExpireTime(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID),
-					&videos,
-					"CreateTime",
-					config.InboxExpireTime)
+					value,
+					config.InboxExpireTime,
+					true,
+					pipeline)
 				if err != nil {
+					err1 := pipeline.Discard()
+					if err1 != nil {
+						return err1
+					}
 					return err
 				}
 			}
 		}
+		// 开始feed持久化
 		feedDao := daoimpl.NewFeedDaoInstance()
-		err = feedDao.InsertBatch(&feeds)
+		tx := feedDao.Begin()
+		err = feedDao.InsertBatch(&feeds, tx, true)
 		if err != nil {
+			tx.Rollback()
+			err1 := pipeline.Discard()
+			if err1 != nil {
+				return err1
+			}
 			return err
 		}
+		_, err = pipeline.Exec()
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		tx.Commit()
 	}
 	return nil
 }

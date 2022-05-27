@@ -8,6 +8,7 @@ import (
 	"douyin/entity/bo"
 	"douyin/util/rabbitutil"
 	"douyin/util/redisutil"
+	"github.com/go-redis/redis"
 	"github.com/robfig/cron/v3"
 	"log"
 	"time"
@@ -25,7 +26,7 @@ func clearOutBox() {
 	c := cron.New()
 	_, err := c.AddFunc("@every 24h", func() {
 		var outBoxes = make([]string, 0)
-		err := redisutil.Keys(config.Config.Redis.Key.Outbox, outBoxes)
+		err := redisutil.Keys(config.Config.Redis.Key.Outbox, &outBoxes)
 		if err != nil {
 			log.Println(err)
 		}
@@ -42,18 +43,21 @@ func clearOutBox() {
 			var index int
 			var feed bo.Feed
 			for index, feed = range feeds {
-				createTime, err := time.Parse(config.Config.StandardTime, feed.CreateTime)
-				if err != nil {
-					log.Println(err)
-				}
 				// 如果发布时间增加七天大于当前，则退出循环
-				if createTime.AddDate(0, 0, 7).After(time.Now()) {
+				if feed.CreateTime.AddDate(0, 0, 7).After(time.Now()) {
 					break
 				}
 			}
 			// 根据index来获取后面在七天内的数据
 			feeds = feeds[index:]
-			err = redisutil.ZSetWithExpireTime(key, feeds, "CreateTime", expireTime)
+			var value = make([]redis.Z, len(feeds))
+			for i, v := range feeds {
+				value[i] = redis.Z{
+					Score:  float64(v.CreateTime.Unix()),
+					Member: v,
+				}
+			}
+			err = redisutil.ZSetWithExpireTime(key, value, expireTime, false, nil)
 			if err != nil {
 				log.Println(err)
 			}
@@ -101,7 +105,7 @@ func handleErrorMSG() {
 	c.Start()
 }
 
-// 清理本地临时存储的视频
+// todo wangyingsong 清理本地临时存储的视频
 func clearLocalVideo() {
 
 }
