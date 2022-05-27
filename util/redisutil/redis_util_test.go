@@ -54,30 +54,10 @@ func TestRedisUtil_SetWithExpireTime(t *testing.T) {
 	}
 }
 
-// 弃用
-func TestRedisUtil_ZSet(t *testing.T) {
-	var zsetSimple = []string{"milk", "coffee", "tea"}
-	err := ZSet("ZZZtest3", zsetSimple, "100")
-	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		panic(err)
-	}
-}
-
 //
 func TestRedisUtil_ZSetV2(t *testing.T) {
 	var zsetSimple = map[string]float64{"apple": 91, "HuaWei": 90, "xiaomi": 85, "redmi": 88}
 	err := ZSetV2("ZZZtest3", zsetSimple)
-	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		panic(err)
-	}
-}
-
-// 正常
-func TestRedisUtil_ZSetWithExpireTime(t *testing.T) {
-	var zsetSimple = []string{"milk", "bear", "tea"}
-	err := ZSetWithExpireTime("ZZZtest3", zsetSimple, "100", 10000000000) // 10s
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		panic(err)
