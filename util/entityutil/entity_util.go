@@ -52,7 +52,7 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 				ID:         c1.ID,  //bo评论id
 				User:       userBo, //bo业务user对象
 				Content:    c1.Content,
-				CreateDate: c1.CreateTime,
+				CreateDate: c1.CreateTime.Format("01-02"),
 			}
 			(*dest)[i] = commentBo
 			i++
@@ -95,7 +95,7 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 	if err != nil {
 		return err
 	}
-	var favoriteVideoIdMap map[int]int = make(map[int]int, len(favoriteVideoId))
+	var favoriteVideoIdMap = make(map[int]int, len(favoriteVideoId))
 	for _, videoId := range favoriteVideoId {
 		favoriteVideoIdMap[videoId] = uid
 	} //key=视频id(当前登录用户喜欢的所有视频),value=当前登录用户id
@@ -142,13 +142,13 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 	}
 	//todo测试用
 	//uid := 1 //测试用
-	allfansId, err := daoimpl.NewRelationDaoInstance().QueryFansIdByFollowId(uid)
+	allFansId, err := daoimpl.NewRelationDaoInstance().QueryFansIdByFollowId(uid)
 	//查出目前用户的所有粉丝
-	var fansMap map[int]int = make(map[int]int, len(allfansId))
+	var fansMap = make(map[int]int, len(allFansId))
 	if err != nil {
 		return err
 	}
-	for _, fan := range allfansId {
+	for _, fan := range allFansId {
 		fansMap[fan] = uid //key=粉丝id；value=目前用户id
 	}
 	for i, poUser := range *users {
@@ -174,7 +174,7 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 	}
 	//todo单元测试暂改
 	//uid := 1 //单元测试用
-	var poFollow po.Follow = po.Follow{
+	var poFollow = po.Follow{
 		FollowId:   uid,
 		FollowerId: (*src).ID,
 	}
