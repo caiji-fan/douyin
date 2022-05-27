@@ -6,13 +6,16 @@ package repositories
 import (
 	"douyin/entity/po"
 	"gorm.io/gorm"
+	"time"
 )
 
 // Video 视频持久层接口
 type Video interface {
 	// Insert 						插入
 	// video 						视频信息
-	Insert(video *po.Video) error
+	// tx							事务操作对象
+	// isTx							是否处于事务中
+	Insert(tx *gorm.DB, video *po.Video, isTx bool) error
 
 	// QueryBatchIds 				id批量查询
 	// videoIds 					视频id集
@@ -28,7 +31,7 @@ type Video interface {
 	// QueryByLatestTimeDESC 		查询某个时间点之前的视频，时间倒序
 	// latestTime					上一次最有一条视频时间
 	// @return 						视频列表
-	QueryByLatestTimeDESC(latestTime string, size int) (*[]po.Video, error)
+	QueryByLatestTimeDESC(latestTime time.Time, size int) (*[]po.Video, error)
 
 	// QueryById 					根据id查询
 	// id							视频id

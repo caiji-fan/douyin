@@ -4,13 +4,23 @@
 package serviceimpl
 
 import (
+	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/po"
 	"douyin/repositories/daoimpl"
+	"douyin/service"
 	"douyin/util/entityutil"
 	"douyin/util/obsutil"
+	"douyin/util/rabbitutil"
+	"douyin/util/redisutil"
+	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
+	"gorm.io/gorm"
 	"mime/multipart"
 	"path/filepath"
+	"strconv"
+	"sync"
+	"time"
 )
 
 type Video struct {
@@ -64,9 +74,9 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 		return nil, 0, err
 	}
 	// 获取查询视频的时间条件，如果从redis从查到了数据，则为数据最后一条的时间，否则为前端传来的时间
-	var timeCondition string
+	var timeCondition time.Time
 	if len(videos) == 0 {
-		timeCondition = time.UnixMilli(latestTime).Format(config.Config.StandardTime)
+		timeCondition = time.UnixMilli(latestTime)
 	} else {
 		timeCondition = videos[len(videos)-1].CreateTime
 	}
@@ -81,14 +91,6 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 		}
 		//拼接到原来数据后面
 		videos = append(videos, *videos1...)
-	}
-	// 获取下一次请求的时间
-	nextTime, err := time.Parse(config.Config.StandardTime, videos[len(videos)-1].CreateTime)
-	if err != nil {
-		if tx != nil {
-			tx.Rollback()
-		}
-		return nil, 0, err
 	}
 	// 转换视频bo
 	var videoBOS = make([]bo.Video, len(videos))
@@ -107,80 +109,56 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 		}
 		return nil, 0, err
 	}
-	return videoBOS, nextTime.UnixMilli(), nil
+	return videoBOS, videos[len(videos)-1].CreateTime.UnixMilli(), nil
 }
 
 // Publish check token then save upload file to public directory
-func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) {
+func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) error {
 	// 视频、封面本地保存
-	videoname := filepath.Base(video.Filename)
-	videoName := fmt.Sprintf("%d_%s", userId, videoname)
-	videoSaveFile := filepath.Join("./public/dy/video", videoName)
+	videoName := obsutil.ParseFileName(filepath.Base(video.Filename))
+	videoSaveFile := filepath.Join(config.Config.Service.VideoTempDir, videoName)
 	if err := c.SaveUploadedFile(video, videoSaveFile); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+		return err
 	}
 
-	covername := filepath.Base(cover.Filename)
-	coverName := fmt.Sprintf("%d_%s", userId, covername)
-	coverSaveFile := filepath.Join("./public/dy/cover", coverName)
+	coverName := obsutil.ParseFileName(filepath.Base(cover.Filename))
+	coverSaveFile := filepath.Join(config.Config.Service.CoverTempDir, coverName)
 	if err := c.SaveUploadedFile(video, coverSaveFile); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+		return err
 	}
-	var videoDB daoimpl.Video
-	dbinstance := po.Video{
-		PlayUrl:       "./public/dy/video" + videoName,
-		CoverUrl:      "./public/dy/cover" + coverName,
+	var videoDB = daoimpl.NewVideoDaoInstance()
+	var tx = videoDB.Begin()
+	videoPo := po.Video{
+		PlayUrl:       videoSaveFile,
+		CoverUrl:      coverSaveFile,
 		FavoriteCount: 0,
 		CommentCount:  0,
 		AuthorId:      userId,
 		Title:         title,
 	}
-	videoDB.Insert(&dbinstance)
-
+	err := videoDB.Insert(tx, &videoPo, true)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	wg := sync.WaitGroup{}
 	wg.Add(2)
 	// 消息队列异步上传视频， 并更新视频、封面的URL信息， 删除本地视频
 	go func() {
-		oldVideoUrl := "./public/dy/video" + videoName
-		oldCoverUrl := "./public/dy/cover" + coverName
-		tx := daoimpl.NewVideoDaoInstance().Begin()
-		var videoDB daoimpl.Video
-		videourl, err := obsutil.Upload(videoName, "dy-video")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
-		}
-		coverurl, err := obsutil.Upload(coverName, "dy-cover")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
-		}
-		dbinstance := po.Video{
-			PlayUrl:       videourl,
-			CoverUrl:      coverurl,
-			FavoriteCount: 0,
-			CommentCount:  0,
-			AuthorId:      userId,
-			Title:         title,
-		}
-		videoDB.UpdateByCondition(&dbinstance, tx, true)
-
-		err = os.Remove(oldVideoUrl)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
-		}
-		err = os.Remove(oldCoverUrl)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
-		}
-		wg.Done()
+		defer wg.Done()
+		err = rabbitutil.UploadVideo(videoPo.ID)
 	}()
-
 	// 消息队列异步将视频加入feed流,正确响应
 	go func() {
-
-		c.JSON(http.StatusOK, response.PubVideo{
-			Response: response.Ok,
-		})
+		err = rabbitutil.FeedVideo(videoPo.ID)
 		wg.Done()
 	}()
+	wg.Wait()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return nil
 }
 
 func (v Video) VideoList(userId int) ([]bo.Video, error) {
@@ -189,7 +167,7 @@ func (v Video) VideoList(userId int) ([]bo.Video, error) {
 	if err != nil {
 		return nil, err
 	}
-	var boVideoList []bo.Video = make([]bo.Video, len(*poVideoList))
+	var boVideoList = make([]bo.Video, len(*poVideoList))
 	// po列表转bo
 	err = entityutil.GetVideoBOS(poVideoList, &boVideoList)
 	if err != nil {
@@ -263,14 +241,8 @@ func mergeBox(inbox *[]bo.Feed, outbox *[]bo.Feed, latestTime int64) ([]int, err
 	var inboxIndex, outboxIndex = 0, 0
 
 	for inboxIndex < len(*inbox) && outboxIndex < len(*outbox) {
-		inboxTime, err := time.Parse(config.Config.StandardTime, (*inbox)[inboxIndex].CreateTime)
-		if err != nil {
-			return nil, err
-		}
-		outboxTime, err := time.Parse(config.Config.StandardTime, (*outbox)[outboxIndex].CreateTime)
-		if err != nil {
-			return nil, err
-		}
+		inboxTime := (*inbox)[inboxIndex].CreateTime
+		outboxTime := (*outbox)[outboxIndex].CreateTime
 		if inboxTime.Before(outboxTime) {
 			videoIds = append(videoIds, (*inbox)[inboxIndex].VideoId)
 			inboxIndex++
@@ -298,10 +270,7 @@ func mergeBox(inbox *[]bo.Feed, outbox *[]bo.Feed, latestTime int64) ([]int, err
 	// 去掉没有选中的信息，为后面加锁管理redis中的收件箱做准备
 	*inbox = (*inbox)[:inboxIndex+1]
 	for outboxIndex < len(*outbox) {
-		outboxTime, err := time.Parse(config.Config.StandardTime, (*outbox)[outboxIndex].CreateTime)
-		if err != nil {
-			return nil, err
-		}
+		outboxTime := (*outbox)[outboxIndex].CreateTime
 		// 只对发件箱中上一次latestTime之前的视频进行投送
 		if outboxTime.UnixMilli() < latestTime {
 			videoIds = append(videoIds, (*outbox)[outboxIndex].VideoId)
@@ -320,14 +289,8 @@ func mergeFeeds(feed1 *[]bo.Feed, feed2 *[]bo.Feed) ([]bo.Feed, error) {
 	var feeds = make([]bo.Feed, len(*feed1)+len(*feed2))
 
 	for index1 < len(*feed1) && index2 < len(*feed2) {
-		time1, err := time.Parse(config.Config.StandardTime, (*feed1)[index1].CreateTime)
-		if err != nil {
-			return nil, err
-		}
-		time2, err := time.Parse(config.Config.StandardTime, (*feed2)[index1].CreateTime)
-		if err != nil {
-			return nil, err
-		}
+		time1 := (*feed1)[index1].CreateTime
+		time2 := (*feed2)[index1].CreateTime
 		if time1.Before(time2) {
 			feeds = append(feeds, (*feed1)[index1])
 			index1++
@@ -370,10 +333,18 @@ func clearInbox(trash *[]bo.Feed, userId int) error {
 			newFeeds = append(newFeeds, feed)
 		}
 	}
+	var value = make([]redis.Z, len(newFeeds))
+	for i, v := range newFeeds {
+		value[i] = redis.Z{
+			Score:  float64(v.CreateTime.UnixMilli()),
+			Member: v,
+		}
+	}
 	err = redisutil.ZSetWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(userId),
-		&newFeeds,
-		"CreateTime",
-		config.OutboxExpireTime)
+		value,
+		config.OutboxExpireTime,
+		false,
+		nil)
 	if err != nil {
 		return err
 	}

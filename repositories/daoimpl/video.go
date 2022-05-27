@@ -8,6 +8,7 @@ import (
 	"douyin/repositories"
 	"gorm.io/gorm"
 	"sync"
+	"time"
 )
 
 type Video struct {
@@ -52,8 +53,14 @@ func (v Video) QueryById(id int) (*po.Video, error) {
 	return &video, err
 }
 
-func (v Video) Insert(video *po.Video) error {
-	return db.Omit("id", "create_time", "update_time").Create(video).Error
+func (v Video) Insert(tx *gorm.DB, video *po.Video, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
+	return db1.Omit("id", "create_time", "update_time").Create(video).Error
 }
 
 func (v Video) QueryBatchIds(videoIds *[]int, size int) ([]po.Video, error) {
@@ -77,12 +84,10 @@ func (v Video) QueryByConditionTimeDESC(condition *po.Video) (*[]po.Video, error
 	return &videos, err
 }
 
-func (v Video) QueryByLatestTimeDESC(latestTime string, size int) (*[]po.Video, error) {
+func (v Video) QueryByLatestTimeDESC(latestTime time.Time, size int) (*[]po.Video, error) {
 	db1 := db
 	var videos []po.Video
-	if latestTime != "" {
-		db1 = db1.Where("update_time < ?", latestTime)
-	}
+	db1 = db1.Where("update_time < ?", latestTime)
 	err := db1.Order("update_time desc").Limit(size).Find(&videos).Error
 	return &videos, err
 }

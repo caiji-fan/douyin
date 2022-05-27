@@ -8,10 +8,12 @@ import (
 	"douyin/entity/myerr"
 	"douyin/entity/param"
 	"douyin/entity/response"
+	"douyin/middleware"
 	"douyin/service/serviceimpl"
 	"douyin/util/webutil"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -63,10 +65,10 @@ func Publish(ctx *gin.Context) {
 	}
 
 	// 通过请求参数获取视频标题
-	var videoParm param.Video
-	err = ctx.ShouldBindQuery(&videoParm)
+	var videoParam param.Video
+	err = ctx.ShouldBindQuery(&videoParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoParm))))
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoParam))))
 		return
 	}
 
@@ -85,7 +87,7 @@ func Publish(ctx *gin.Context) {
 	}
 
 	// 发布
-	err = serviceimpl.NewVideoServiceInstance().Publish(video, cover, authorId, videoParam.Title)
+	err = serviceimpl.NewVideoServiceInstance().Publish(ctx, video, cover, authorId, videoParam.Title)
 	if err != nil {
 		ctx.JSON(http.StatusProxyAuthRequired, response.ErrorResponse(err))
 		return
@@ -107,7 +109,7 @@ func VideoList(ctx *gin.Context) {
 
 	boVideos, err := serviceimpl.NewVideoServiceInstance().VideoList(videoList.UserID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+
 	}
 	ctx.JSON(http.StatusOK, response.VideoList{
 		Response:  response.Ok,

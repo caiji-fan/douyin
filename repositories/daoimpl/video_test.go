@@ -37,7 +37,7 @@ func TestVideoDaoImpl_Insert(t *testing.T) {
 		AuthorId:      1,
 		Title:         "测试标题：看到就成功",
 	}
-	err := videoDao.Insert(&video)
+	err := videoDao.Insert(nil, &video, false)
 	if err != nil {
 		fmt.Println(err)
 	}

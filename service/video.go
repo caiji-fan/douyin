@@ -5,6 +5,7 @@ package service
 
 import (
 	"douyin/entity/bo"
+	"github.com/gin-gonic/gin"
 	"mime/multipart"
 )
 
@@ -20,7 +21,8 @@ type Video interface {
 	// Publish 			发布视频
 	// file 			视频文件
 	// userId 			用户id
-	Publish(video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) error
+	// ctx				上下文，用于保存视频到本地
+	Publish(ctx *gin.Context, video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) error
 
 	// VideoList 		查看视频发布列表
 	// userId			用户id
