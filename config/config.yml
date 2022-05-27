@@ -81,7 +81,8 @@ service:
   # 标识大v的粉丝数
   big-v-num: 1000000
   # 临时路径
-  temp-dir: ""
+  video-temp-dir: "/public/dy/video/"
+  cover-temp-dir: "/public/dy/cover/"
   # 分页大小
   page-size: 10
 jwt:
