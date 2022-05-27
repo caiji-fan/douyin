@@ -4,20 +4,13 @@
 package serviceimpl
 
 import (
-	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/po"
 	"douyin/repositories/daoimpl"
-	"douyin/service"
 	"douyin/util/entityutil"
 	"douyin/util/obsutil"
-	"douyin/util/redisutil"
-	"gorm.io/gorm"
 	"mime/multipart"
 	"path/filepath"
-	"strconv"
-	"sync"
-	"time"
 )
 
 type Video struct {
@@ -118,36 +111,46 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 }
 
 // Publish check token then save upload file to public directory
-func (v Video) Publish(video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) error {
+func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) {
+	// 视频、封面本地保存
+	videoname := filepath.Base(video.Filename)
+	videoName := fmt.Sprintf("%d_%s", userId, videoname)
+	videoSaveFile := filepath.Join("./public/dy/video", videoName)
+	if err := c.SaveUploadedFile(video, videoSaveFile); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+	}
 
-	videoPath := filepath.Base(video.Filename)
-	// videoFinalName := fmt.Sprintf("%d_%s", authorId, videoPath)
-	// videoSaveFile := filepath.Join("./public/dy/video", videoFinalName)
-	// if err := ctx.SaveUploadedFile(video, videoSaveFile); err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, video))))
-	// 	return
-	// }
-	// vFile, err := video.Open()
+	covername := filepath.Base(cover.Filename)
+	coverName := fmt.Sprintf("%d_%s", userId, covername)
+	coverSaveFile := filepath.Join("./public/dy/cover", coverName)
+	if err := c.SaveUploadedFile(video, coverSaveFile); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+	}
+	var videoDB daoimpl.Video
+	dbinstance := po.Video{
+		PlayUrl:       "./public/dy/video" + videoName,
+		CoverUrl:      "./public/dy/cover" + coverName,
+		FavoriteCount: 0,
+		CommentCount:  0,
+		AuthorId:      userId,
+		Title:         title,
+	}
+	videoDB.Insert(&dbinstance)
 
-	coverPath := filepath.Base(cover.Filename)
-	// coverFinalName := fmt.Sprintf("%d_%s", authorId, coverPath)
-	// coverSaveFile := filepath.Join("./public/dy/cover", coverFinalName)
-	// if err := ctx.SaveUploadedFile(video, coverSaveFile); err != nil {
-	// 	ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, cover))))
-	// 	return
-	// }
-	// cFile, err := cover.Open()
-
-	// 消息队列异步上传视频， 并将视频信息写入库
+	wg.Add(2)
+	// 消息队列异步上传视频， 并更新视频、封面的URL信息， 删除本地视频
 	go func() {
+		oldVideoUrl := "./public/dy/video" + videoName
+		oldCoverUrl := "./public/dy/cover" + coverName
+		tx := daoimpl.NewVideoDaoInstance().Begin()
 		var videoDB daoimpl.Video
-		videourl, err := obsutil.Upload(videoPath, "dy-video")
+		videourl, err := obsutil.Upload(videoName, "dy-video")
 		if err != nil {
-
+			c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
 		}
-		coverurl, err := obsutil.Upload(coverPath, "dy-cover")
+		coverurl, err := obsutil.Upload(coverName, "dy-cover")
 		if err != nil {
-
+			c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
 		}
 		dbinstance := po.Video{
 			PlayUrl:       videourl,
@@ -157,15 +160,27 @@ func (v Video) Publish(video *multipart.FileHeader, cover *multipart.FileHeader,
 			AuthorId:      userId,
 			Title:         title,
 		}
-		err = videoDB.Insert(&dbinstance)
-		if err != nil {
-			return
-		}
-	}()
-	// 消息队列异步将视频加入feed流
-	// 正确响应
+		videoDB.UpdateByCondition(&dbinstance, tx, true)
 
-	return nil
+		err = os.Remove(oldVideoUrl)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+		}
+		err = os.Remove(oldCoverUrl)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+		}
+		wg.Done()
+	}()
+
+	// 消息队列异步将视频加入feed流,正确响应
+	go func() {
+
+		c.JSON(http.StatusOK, response.PubVideo{
+			Response: response.Ok,
+		})
+		wg.Done()
+	}()
 }
 
 func (v Video) VideoList(userId int) ([]bo.Video, error) {

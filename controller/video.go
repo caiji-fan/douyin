@@ -8,13 +8,12 @@ import (
 	"douyin/entity/myerr"
 	"douyin/entity/param"
 	"douyin/entity/response"
-	"douyin/middleware"
 	"douyin/service/serviceimpl"
 	"douyin/util/webutil"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Feed 		刷视频
@@ -55,19 +54,19 @@ func Feed(ctx *gin.Context) {
 
 // Publish 		投稿视频
 func Publish(ctx *gin.Context) {
+	// ********************得到token与视频信息********************
 
 	// 通过线程获取投稿人id
 	authorId, err := strconv.Atoi(config.Config.ThreadLocal.Keys.UserId)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, response.SystemError)
-		return
+
 	}
 
 	// 通过请求参数获取视频标题
-	var videoParam param.Video
-	err = ctx.ShouldBindQuery(&videoParam)
+	var videoParm param.Video
+	err = ctx.ShouldBindQuery(&videoParm)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoParam))))
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoParm))))
 		return
 	}
 

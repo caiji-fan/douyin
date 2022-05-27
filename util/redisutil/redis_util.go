@@ -35,15 +35,15 @@ func SetWithExpireTime(key string, value interface{}, duration time.Duration) er
 // value 						获取的值存储的指针
 func Get(key string, value interface{}) error {
 	v, err := RedisDB.Get(key).Result()
-	val := reflect.ValueOf(v)
-	value = val.Interface()
 	if err == redis.Nil {
 		fmt.Print("key dose not exist\n")
 	} else if err != nil {
 		fmt.Printf("get %v failed, err:%v\n", key, err)
 		return err
 	}
-	fmt.Printf("get %v succeed\n, value:%v\n", key, v)
+	val := reflect.ValueOf(value).Elem()
+	val.Set(reflect.ValueOf(v))
+	fmt.Printf("get %v succeed, \nvalue:%v\n", key, v)
 	return nil
 }
 
@@ -58,9 +58,9 @@ func GetAndDelete(key string, value interface{}) error {
 	} else if err != nil {
 		fmt.Printf("get %v failed, err:%v\n", key, err)
 	}
-	fmt.Printf("get %v succeed, value:%v\n", key, v)
-	val := reflect.ValueOf(v)
-	value = val.Interface()
+	val := reflect.ValueOf(value).Elem()
+	val.Set(reflect.ValueOf(v))
+	fmt.Printf("get %v succeed, \nvalue:%v\n", key, v)
 	// Delete
 	_, err = RedisDB.Del(key).Result()
 	if err == redis.Nil {
@@ -101,14 +101,27 @@ func ZSet(key string, value interface{}, score string) error {
 	return err
 }
 
+func ZSetV2(key string, value map[string]float64) error {
+	addValues := make([]redis.Z, len(value))
+	for k, v := range value {
+		addValues = append(addValues, redis.Z{
+			Score:  v,
+			Member: reflect.ValueOf(k).Interface(),
+		})
+	}
+	_, err := RedisDB.ZAdd(key, addValues...).Result()
+	return err
+}
+
 // ZGet 						获取set类型
 // key 							键
 // value 						获取的值存储的指针
 func ZGet(key string, value interface{}) error {
-	score, err := RedisDB.ZRange(key, 0, -1).Result()
-	fmt.Printf("zget 获得值：%v", score)
-	val := reflect.ValueOf(score)
-	value = val.Interface()
+	v, err := RedisDB.ZRange(key, 0, -1).Result()
+	fmt.Printf("zget 获得值：%v", v)
+	val := reflect.ValueOf(value).Elem()
+	val.Set(reflect.ValueOf(v))
+	fmt.Printf("get %v succeed, \nvalue:%v\n", key, v)
 	return err
 }
 
