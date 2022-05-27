@@ -11,7 +11,7 @@ import (
 // Feed feed流持久层接口
 type Feed interface {
 	// InsertBatch 批量插入
-	InsertBatch(feeds *[]po.Feed) error
+	InsertBatch(feeds *[]po.Feed, tx *gorm.DB, isTx bool) error
 
 	// QueryByCondition 条件查询
 	QueryByCondition(feed *po.Feed) ([]po.Feed, error)

@@ -13,8 +13,14 @@ import (
 type Feed struct {
 }
 
-func (f Feed) InsertBatch(feeds *[]po.Feed) error {
-	return db.Omit("id", "create_time", "update_time").Create(feeds).Error
+func (f Feed) InsertBatch(feeds *[]po.Feed, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
+	return db1.Omit("id", "create_time", "update_time").Create(feeds).Error
 }
 
 func (f Feed) QueryByCondition(feed *po.Feed) ([]po.Feed, error) {
