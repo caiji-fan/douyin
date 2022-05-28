@@ -93,7 +93,7 @@ func parseToken(ctx *gin.Context, token string) (error, int) {
 //判断redis中token是否有效
 func tokenValid(ctx *gin.Context, userId int) error {
 	var redisToken string
-	err := redisutil.Get(config.Config.Redis.Key.Token+strconv.Itoa(userId), &redisToken)
+	err := redisutil.Get[string](config.Config.Redis.Key.Token+strconv.Itoa(userId), &redisToken)
 	if err != nil || redisToken == "" {
 		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.InvalidToken))
 		ctx.Abort()

@@ -2,10 +2,14 @@ package redisutil
 
 import (
 	"douyin/config"
+	"douyin/entity/bo"
+	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis"
 	"log"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestMain(t *testing.M) {
@@ -14,63 +18,93 @@ func TestMain(t *testing.M) {
 	t.Run()
 }
 
-// 正常
-func TestRedisUtil_Set(t *testing.T) {
-	err := Set("test3", "congratulation! you are succeed!!")
+type TestRedis struct {
+	Value string `json:"value"`
+}
+
+func (t TestRedis) MarshalBinary() ([]byte, error) {
+	return json.Marshal(t)
+}
+
+// pass
+func TestSet(t *testing.T) {
+	err := Set("test", TestRedis{Value: "456"})
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		panic(err)
+		log.Fatalln(err)
 	}
 }
 
-// 正常
-func TestRedisUtil_Get(t *testing.T) {
-	var val string
-	err := Get("test3", &val)
+// pass
+func TestGet(t *testing.T) {
+	var val TestRedis
+	err := Get[TestRedis]("test", &val)
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		panic(err)
-	}
-	fmt.Printf("val: %v\n", val)
-}
-
-// 正常，经过客户端测试会发现确实删掉了，但是缓存的原因这里还可以搜索到
-func TestRedisUtil_GetAndDelete(t *testing.T) {
-	var val interface{}
-	err := GetAndDelete("test3", &val)
-	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		panic(err)
+		log.Fatalln(err)
 	}
 	fmt.Printf("val: %v\n", val)
 }
 
+// pass
+func TestGetAndDelete(t *testing.T) {
+	var val TestRedis
+	err := GetAndDelete[TestRedis]("test", &val)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Printf("val: %v\n", val)
+}
+
 // 正常
-func TestRedisUtil_SetWithExpireTime(t *testing.T) {
-	err := SetWithExpireTime("test2", "t2 not timeout!", 300000000000)
+func TestSetWithExpireTime(t *testing.T) {
+	duration, err := time.ParseDuration("1m")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = SetWithExpireTime("test", TestRedis{Value: "456"}, duration)
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		panic(err)
 	}
 }
 
-//
-func TestRedisUtil_ZSetV2(t *testing.T) {
-	var zsetSimple = map[string]float64{"apple": 91, "HuaWei": 90, "xiaomi": 85, "redmi": 88}
-	err := ZSetV2("ZZZtest3", zsetSimple)
+func TestTTL(t *testing.T) {
+	ttl, err := TTL("test")
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		panic(err)
+		log.Fatalln(err)
+	}
+	fmt.Println(ttl)
+}
+
+// pass
+func TestZAdd(t *testing.T) {
+	var value = make([]redis.Z, 1)
+	value[0] = redis.Z{Score: 1, Member: bo.Feed{VideoId: 1, CreateTime: time.Now()}}
+	err := ZAdd("test", value)
+	if err != nil {
+		log.Fatalln(err)
 	}
 }
 
-// 正常
-func TestRedisUtil_ZGet(t *testing.T) {
-	val := make([]string, 0)
-	err := ZGet("ZZZtest3", &val)
+// pass
+func TestZAddWithExpireTime(t *testing.T) {
+	var value = make([]redis.Z, 1)
+	value[0] = redis.Z{Score: 1, Member: bo.Feed{VideoId: 1, CreateTime: time.Now()}}
+	expireTime, err := time.ParseDuration(config.Config.Redis.ExpireTime.Inbox)
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
-		panic(err)
+		log.Fatalln(err)
+	}
+	err = ZAddWithExpireTime(config.Config.Redis.Key.Inbox+"1", value, expireTime, false, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+// pass
+func TestZRevRange(t *testing.T) {
+	val := make([]bo.Feed, 0)
+	err := ZRevRange[bo.Feed]("test", &val)
+	if err != nil {
+		log.Fatalln(err)
 	}
 	fmt.Printf("type: %v, val: %v\n", reflect.TypeOf(val), val)
 }
@@ -85,11 +119,16 @@ func TestKeys(t *testing.T) {
 	fmt.Println(keys)
 }
 
-// pass
-func TestGetExpireTime(t *testing.T) {
-	ttl, err := GetExpireTime("name:1")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(ttl)
+//pass
+func TestBegin(t *testing.T) {
+	p := Begin()
+	fmt.Println(p)
+}
+
+func TestLock(t *testing.T) {
+
+}
+
+func TestUnlock(t *testing.T) {
+
 }

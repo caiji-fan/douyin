@@ -56,7 +56,6 @@ func Feed(ctx *gin.Context) {
 
 // Publish 		投稿视频
 func Publish(ctx *gin.Context) {
-	// ********************得到token与视频信息********************
 
 	// 通过线程获取投稿人id
 	authorId, err := strconv.Atoi(config.Config.ThreadLocal.Keys.UserId)

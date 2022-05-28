@@ -180,7 +180,7 @@ func (v Video) VideoList(userId int) ([]bo.Video, error) {
 func fromInbox(userId int) ([]bo.Feed, *gorm.DB, error) {
 	var tx *gorm.DB
 	var feedBOS = make([]bo.Feed, 0)
-	err := redisutil.ZGet(config.Config.Redis.Key.Inbox+strconv.Itoa(userId), &feedBOS)
+	err := redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Inbox+strconv.Itoa(userId), &feedBOS)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -215,7 +215,7 @@ func fromOutbox(userId int) ([]bo.Feed, error) {
 	for _, user := range *follows {
 		if user.FollowerCount >= config.Config.Service.BigVNum {
 			var feed = make([]bo.Feed, 5)
-			err := redisutil.ZGet(config.Config.Redis.Key.Outbox+strconv.Itoa(user.ID), &feed)
+			err := redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Outbox+strconv.Itoa(user.ID), &feed)
 			if err != nil {
 				return nil, err
 			}
@@ -317,7 +317,7 @@ func clearInbox(trash *[]bo.Feed, userId int) error {
 
 	// 获取redis中的数据
 	var feeds []bo.Feed
-	err := redisutil.ZGet(config.Config.Redis.Key.Outbox+strconv.Itoa(userId), &feeds)
+	err := redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Outbox+strconv.Itoa(userId), &feeds)
 	if err != nil {
 		return err
 	}
@@ -340,7 +340,7 @@ func clearInbox(trash *[]bo.Feed, userId int) error {
 			Member: v,
 		}
 	}
-	err = redisutil.ZSetWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(userId),
+	err = redisutil.ZAddWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(userId),
 		value,
 		config.OutboxExpireTime,
 		false,
