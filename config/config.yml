@@ -74,6 +74,7 @@ obs:
   location: "cn-north-4"
   buckets:
     video: "dy-video"
+    cover: "dy-cover"
 thread-local:
   keys:
     user-id: "user_id"

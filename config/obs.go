@@ -11,5 +11,6 @@ type obs struct {
 	Location  string `yaml:"location"`
 	Buckets   struct {
 		Video string `yaml:"video"`
+		Cover string `yaml:"cover"`
 	} `yaml:"buckets"`
 }
