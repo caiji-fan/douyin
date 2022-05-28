@@ -256,25 +256,15 @@ func doFeedVideo(videoId int) error {
 	if video.ID == 0 {
 		return nil
 	}
+	// 获取投稿人的信息
 	sender, err := daoimpl.NewUserDaoInstance().QueryById(video.AuthorId)
 	if err != nil {
 		return err
 	}
-	var videos []bo.Feed
+	// 取得需要存入redis的value
+	var value = []redis.Z{{Score: float64(video.CreateTime.UnixMilli()), Member: video}}
 	//大v用户
 	if sender.FollowerCount >= config.Config.Service.BigVNum {
-		err = redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Outbox+strconv.Itoa(sender.ID), &videos)
-		if err != nil {
-			return err
-		}
-		videos = append(videos, bo.Feed{VideoId: videoId, CreateTime: video.CreateTime})
-		var value = make([]redis.Z, len(videos))
-		for i, v := range videos {
-			value[i] = redis.Z{
-				Score:  float64(v.CreateTime.UnixMilli()),
-				Member: v,
-			}
-		}
 		err = redisutil.ZAddWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(sender.ID),
 			value,
 			config.OutboxExpireTime,
@@ -298,45 +288,22 @@ func doFeedVideo(videoId int) error {
 		// feed集合，用户持久化
 		var feeds = make([]po.Feed, 0)
 		for _, user := range *users {
-			err = redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID), &videos)
+			// 增加到用户的发件箱中,向用户投放不影响用户的收件箱过期时间
+			err = redisutil.ZAdd(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID),
+				value,
+				true,
+				pipeline)
 			if err != nil {
+				err1 := pipeline.Discard()
+				if err1 != nil {
+					return err1
+				}
 				return err
 			}
-			// 不存在收件箱，则入库
-			if videos == nil || len(videos) == 0 {
-				feeds = append(feeds, po.Feed{UserId: user.ID, VideoId: videoId})
-			} else {
-				videos = append(videos, bo.Feed{VideoId: videoId, CreateTime: video.CreateTime})
-				var value = make([]redis.Z, len(videos))
-				for i, v := range videos {
-					value[i] = redis.Z{
-						Score:  float64(v.CreateTime.UnixMilli()),
-						Member: v,
-					}
-				}
-				err = redisutil.ZAddWithExpireTime(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID),
-					value,
-					config.InboxExpireTime,
-					true,
-					pipeline)
-				if err != nil {
-					err1 := pipeline.Discard()
-					if err1 != nil {
-						return err1
-					}
-					return err
-				}
-			}
+			// 记录需要入库的数据
+			feeds = append(feeds, po.Feed{UserId: user.ID, VideoId: videoId})
 		}
-		// 如果没有数据入库，则直接执行redis事务后退出
-		if len(feeds) == 0 {
-			_, err = pipeline.Exec()
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-		// 开始feed持久化
+		// 开始feed持久化，对数据入库
 		feedDao := daoimpl.NewFeedDaoInstance()
 		tx := feedDao.Begin()
 		err = feedDao.InsertBatch(&feeds, tx, true)

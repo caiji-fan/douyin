@@ -22,7 +22,15 @@ type TestRedis struct {
 	Value string `json:"value"`
 }
 
+type TestRedis2 struct {
+	Value string    `json:"value"`
+	Date  time.Time `json:"date"`
+}
+
 func (t TestRedis) MarshalBinary() ([]byte, error) {
+	return json.Marshal(t)
+}
+func (t TestRedis2) MarshalBinary() ([]byte, error) {
 	return json.Marshal(t)
 }
 
@@ -77,9 +85,23 @@ func TestTTL(t *testing.T) {
 
 // pass
 func TestZAdd(t *testing.T) {
-	var value = make([]redis.Z, 1)
-	value[0] = redis.Z{Score: 1, Member: bo.Feed{VideoId: 1, CreateTime: time.Now()}}
-	err := ZAdd("test", value)
+	var value = make([]redis.Z, 2)
+	time1, _ := time.Parse(config.Config.StandardTime, "2002-2-2")
+	time2, _ := time.Parse(config.Config.StandardTime, "2002-2-3")
+	value[0] = redis.Z{Score: 1, Member: TestRedis2{Value: "123", Date: time1}}
+	value[1] = redis.Z{Score: 1, Member: TestRedis2{Value: "456", Date: time2}}
+	err := ZAdd("test", value, false, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+// pass
+func TestZRem(t *testing.T) {
+	time1, _ := time.Parse(config.Config.StandardTime, "2002-2-2")
+	time2, _ := time.Parse(config.Config.StandardTime, "2002-2-3")
+	var value = []TestRedis2{{Value: "123", Date: time1}, {Value: "456", Date: time2}}
+	err := ZRem[TestRedis2]("test", &value, false, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -54,9 +54,9 @@ func TestDoChangeFollowNum(t *testing.T) {
 func TestDoFeedVideo(t *testing.T) {
 	daoimpl.Init()
 	redisutil.Init()
-	err := doFeedVideo(2)
+	err := doFeedVideo(11)
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 }
 

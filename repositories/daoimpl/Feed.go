@@ -42,8 +42,12 @@ func (f Feed) DeleteByCondition(feed *[]po.Feed, tx *gorm.DB, isTx bool) error {
 	} else {
 		db1 = db
 	}
-	for _, v := range *feed {
-		db1 = db1.Where("video_id = ? and user_id = ?", v.VideoId, v.UserId)
+	for i, v := range *feed {
+		if i == 0 {
+			db1 = db1.Where("video_id = ? and user_id = ?", v.VideoId, v.UserId)
+		} else {
+			db1 = db1.Or("video_id = ? and user_id = ?", v.VideoId, v.UserId)
+		}
 	}
 	return db1.Delete(po.Feed{}).Error
 }

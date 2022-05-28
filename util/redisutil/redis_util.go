@@ -80,9 +80,19 @@ func GetAndDelete[T any](key string, value *T) error {
 // ZAdd 						插入set类型
 // key						 	键
 // value 						需要插入的值
-func ZAdd(key string, value []redis.Z) error {
-	_, err := RedisDB.ZAdd(key, value...).Result()
-	return err
+func ZAdd(key string, value []redis.Z, isTx bool, pipeline redis.Pipeliner) error {
+	if isTx {
+		_, err := pipeline.ZAdd(key, value...).Result()
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := RedisDB.ZAdd(key, value...).Result()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ZRevRange 					逆序获取set类型
@@ -143,6 +153,31 @@ func ZAddWithExpireTime(key string, value []redis.Z, duration time.Duration, isT
 	return nil
 }
 
+// ZRem 						删除sort_set中的数据
+// key							需要删除数据的键
+// value						需要删除的数据
+func ZRem[T any](key string, value *[]T, isTx bool, pipeline redis.Pipeliner) error {
+	for _, v := range *value {
+		val, err := json.Marshal(v)
+		if err != nil {
+			return err
+		}
+		if isTx {
+			_, err := pipeline.ZRem(key, val).Result()
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err := RedisDB.ZRem(key, val).Result()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Keys 获取匹配的键集
 func Keys(prefix string, keys *[]string) error {
 	res := RedisDB.Keys(prefix + "*")
@@ -154,18 +189,6 @@ func Keys(prefix string, keys *[]string) error {
 func TTL(key string) (time.Duration, error) {
 	res := RedisDB.TTL(key)
 	return res.Val(), res.Err()
-}
-
-// Lock 加锁
-// todo wangyingsong
-func Lock(key string, expireTime time.Duration) (bool, error) {
-	return false, nil
-}
-
-// Unlock 解锁
-//todo wangyingsong
-func Unlock(key string) error {
-	return nil
 }
 
 // Begin 开启事务

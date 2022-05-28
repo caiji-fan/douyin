@@ -8,7 +8,6 @@ import (
 	"douyin/entity/bo"
 	"douyin/util/rabbitutil"
 	"douyin/util/redisutil"
-	"github.com/go-redis/redis"
 	"github.com/robfig/cron/v3"
 	"log"
 	"time"
@@ -56,32 +55,26 @@ func clearOutBox() {
 	}
 	for _, key := range outBoxes {
 		var feeds = make([]bo.Feed, 0)
-		expireTime, err := redisutil.TTL(key)
 		if err != nil {
 			log.Println(err)
 		}
+		// 获取发件箱中的数据
 		err = redisutil.ZRevRange[bo.Feed](key, &feeds)
 		if err != nil {
 			log.Println(err)
 		}
 		var index int
 		var feed bo.Feed
+		// 对发件箱中的数据进行排查
 		for index, feed = range feeds {
 			// 如果发布时间增加七天大于当前，则退出循环
 			if feed.CreateTime.AddDate(0, 0, 7).After(time.Now()) {
 				break
 			}
 		}
-		// 根据index来获取后面在七天内的数据
-		feeds = feeds[index:]
-		var value = make([]redis.Z, len(feeds))
-		for i, v := range feeds {
-			value[i] = redis.Z{
-				Score:  float64(v.CreateTime.Unix()),
-				Member: v,
-			}
-		}
-		err = redisutil.ZAddWithExpireTime(key, value, expireTime, false, nil)
+		// 根据index来获取需要清理的数据
+		feeds = feeds[:index]
+		err = redisutil.ZRem[bo.Feed](key, &feeds, false, nil)
 		if err != nil {
 			log.Println(err)
 		}

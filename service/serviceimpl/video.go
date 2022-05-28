@@ -14,7 +14,6 @@ import (
 	"douyin/util/rabbitutil"
 	"douyin/util/redisutil"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
 	"gorm.io/gorm"
 	"mime/multipart"
 	"path/filepath"
@@ -42,14 +41,14 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 	if isLogin {
 		wait := sync.WaitGroup{}
 		wait.Add(2)
-		go func() {
+		go func(inbox *[]bo.Feed, userId int) {
 			defer wait.Done()
-			inbox, err = fromInbox(userId)
-		}()
-		go func() {
+			*inbox, err = fromInbox(userId)
+		}(&inbox, userId)
+		go func(outbox *[]bo.Feed, userId int) {
 			defer wait.Done()
-			outbox, err = fromOutbox(userId)
-		}()
+			*outbox, err = fromOutbox(userId)
+		}(&outbox, userId)
 		wait.Wait()
 		if err != nil {
 			return nil, 0, err
@@ -82,7 +81,8 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 	}
 	// 转换视频bo
 	var videoBOS = make([]bo.Video, len(videos))
-	err = entityutil.GetVideoBOS(&videos, &videoBOS)
+	// todo 实体转换
+	//err = entityutil.GetVideoBOS(&videos, &videoBOS)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -191,11 +191,12 @@ func fromOutbox(userId int) ([]bo.Feed, error) {
 	if err != nil {
 		return nil, err
 	}
-	var feeds = make([]bo.Feed, 5)
+	var feeds []bo.Feed
 	var length = 0
 	for _, user := range *follows {
 		if user.FollowerCount >= config.Config.Service.BigVNum {
-			var feed = make([]bo.Feed, 5)
+			// 这里不能初始化分配，初始化分配会导致分配到默认值，而不是空
+			var feed []bo.Feed
 			err := redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Outbox+strconv.Itoa(user.ID), &feed)
 			if err != nil {
 				return nil, err
@@ -219,45 +220,50 @@ func fromOutbox(userId int) ([]bo.Feed, error) {
 // @return id集合
 func mergeBox(inbox *[]bo.Feed, outbox *[]bo.Feed, latestTime int64) ([]int, error) {
 	var videoIds = make([]int, config.Config.Service.PageSize)
-	var inboxIndex, outboxIndex = 0, 0
+	var inboxIndex, outboxIndex, resIndex = 0, 0, 0
 
 	for inboxIndex < len(*inbox) && outboxIndex < len(*outbox) {
 		inboxTime := (*inbox)[inboxIndex].CreateTime
 		outboxTime := (*outbox)[outboxIndex].CreateTime
-		if inboxTime.Before(outboxTime) {
-			videoIds = append(videoIds, (*inbox)[inboxIndex].VideoId)
+		if inboxTime.After(outboxTime) {
+			videoIds[resIndex] = (*inbox)[inboxIndex].VideoId
+			resIndex++
 			inboxIndex++
 		} else {
 			// 只对发件箱中上一次latestTime之前的视频进行投送
 			if outboxTime.UnixMilli() < latestTime {
-				videoIds = append(videoIds, (*outbox)[outboxIndex].VideoId)
+				videoIds[resIndex] = (*outbox)[outboxIndex].VideoId
+				resIndex++
 			}
 			outboxIndex++
 		}
-		if len(videoIds) == config.Config.Service.PageSize {
+		// 当结果id集已经满了一页
+		if resIndex == config.Config.Service.PageSize {
 			*inbox = (*inbox)[inboxIndex:]
 			return videoIds, nil
 		}
 	}
 	for inboxIndex < len(*inbox) {
-		videoIds = append(videoIds, (*inbox)[inboxIndex].VideoId)
+		videoIds[resIndex] = (*inbox)[inboxIndex].VideoId
+		resIndex++
 		inboxIndex++
-		if len(videoIds) == config.Config.Service.PageSize {
-			// 去掉没有选中的信息，为后面加锁管理redis中的收件箱做准备
-			*inbox = (*inbox)[:inboxIndex+1]
+		if resIndex == config.Config.Service.PageSize {
+			// 去掉没有选中的信息，为后面清理redis中的收件箱做准备
+			*inbox = (*inbox)[:inboxIndex]
 			return videoIds, nil
 		}
 	}
 	// 去掉没有选中的信息，为后面加锁管理redis中的收件箱做准备
-	*inbox = (*inbox)[:inboxIndex+1]
+	*inbox = (*inbox)[:inboxIndex]
 	for outboxIndex < len(*outbox) {
 		outboxTime := (*outbox)[outboxIndex].CreateTime
 		// 只对发件箱中上一次latestTime之前的视频进行投送
 		if outboxTime.UnixMilli() < latestTime {
-			videoIds = append(videoIds, (*outbox)[outboxIndex].VideoId)
+			videoIds[resIndex] = (*outbox)[outboxIndex].VideoId
+			resIndex++
 		}
 		outboxIndex++
-		if len(videoIds) == config.Config.Service.PageSize {
+		if resIndex == config.Config.Service.PageSize {
 			return videoIds, nil
 		}
 	}
@@ -266,26 +272,29 @@ func mergeBox(inbox *[]bo.Feed, outbox *[]bo.Feed, latestTime int64) ([]int, err
 
 // 按顺序合并两个feed切片
 func mergeFeeds(feed1 *[]bo.Feed, feed2 *[]bo.Feed) ([]bo.Feed, error) {
-	var index1, index2 = 0, 0
+	var index1, index2, resIndex = 0, 0, 0
 	var feeds = make([]bo.Feed, len(*feed1)+len(*feed2))
 
 	for index1 < len(*feed1) && index2 < len(*feed2) {
 		time1 := (*feed1)[index1].CreateTime
-		time2 := (*feed2)[index1].CreateTime
-		if time1.Before(time2) {
-			feeds = append(feeds, (*feed1)[index1])
+		time2 := (*feed2)[index2].CreateTime
+		if time1.After(time2) {
+			feeds[resIndex] = (*feed1)[index1]
 			index1++
 		} else {
-			feeds = append(feeds, (*feed2)[index2])
+			feeds[resIndex] = (*feed2)[index2]
 			index2++
 		}
+		resIndex++
 	}
 	for index1 < len(*feed1) {
-		feeds = append(feeds, (*feed1)[index1])
+		feeds[resIndex] = (*feed1)[index1]
+		resIndex++
 		index1++
 	}
 	for index2 < len(*feed2) {
-		feeds = append(feeds, (*feed2)[index2])
+		feeds[resIndex] = (*feed2)[index2]
+		resIndex++
 		index2++
 	}
 	return feeds, nil
@@ -294,42 +303,16 @@ func mergeFeeds(feed1 *[]bo.Feed, feed2 *[]bo.Feed) ([]bo.Feed, error) {
 // 清理收件箱，用户查看一次收件箱后，将收件箱中已经查看过的视频清除
 // trash 已经查看过的feed对象
 func clearInbox(trash *[]bo.Feed, userId int) (*gorm.DB, error) {
+	// 清理数据库中的数据
 	tx := daoimpl.NewFeedDaoInstance().Begin()
 	var trashPOS = make([]po.Feed, len(*trash))
 	for i, v := range *trash {
 		trashPOS[i] = po.Feed{VideoId: v.VideoId, UserId: userId}
 	}
 	err := daoimpl.NewFeedDaoInstance().DeleteByCondition(&trashPOS, tx, true)
-	//todo 加锁,防止清理过程中的新增数据造成影响
-
-	// 获取redis中的数据
-	var feeds []bo.Feed
-	err = redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Outbox+strconv.Itoa(userId), &feeds)
-	if err != nil {
-		return tx, err
-	}
-	// 获取垃圾中的视频id映射
-	var mapper = make(map[int]int, len(*trash))
-	for _, feed := range *trash {
-		mapper[feed.VideoId] = 1
-	}
-	// 新切片从原切片中取非垃圾部分
-	var newFeeds = make([]bo.Feed, 0)
-	for _, feed := range feeds {
-		if mapper[feed.VideoId] != 1 {
-			newFeeds = append(newFeeds, feed)
-		}
-	}
-	var value = make([]redis.Z, len(newFeeds))
-	for i, v := range newFeeds {
-		value[i] = redis.Z{
-			Score:  float64(v.CreateTime.UnixMilli()),
-			Member: v,
-		}
-	}
-	err = redisutil.ZAddWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(userId),
-		value,
-		config.OutboxExpireTime,
+	// 删除垃圾数据
+	err = redisutil.ZRem[bo.Feed](config.Config.Redis.Key.Inbox+strconv.Itoa(userId),
+		trash,
 		false,
 		nil)
 	if err != nil {
