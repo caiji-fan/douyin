@@ -81,21 +81,22 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 	}
 	// 转换视频bo
 	var videoBOS = make([]bo.Video, len(videos))
-	// todo 实体转换
-	//err = entityutil.GetVideoBOS(&videos, &videoBOS)
+	err = entityutil.GetVideoBOS(&videos, &videoBOS)
 	if err != nil {
 		return nil, 0, err
 	}
-	// 取出部分后，重新存入数据
-	tx, err := clearInbox(&inbox, userId)
-	if err != nil {
-		if tx != nil {
-			tx.Rollback()
+	if isLogin {
+		// 取出部分后，重新存入数据
+		tx, err := clearInbox(&inbox, userId)
+		if err != nil {
+			if tx != nil {
+				tx.Rollback()
+			}
+			return nil, 0, err
 		}
-		return nil, 0, err
+		// 提交事务
+		tx.Commit()
 	}
-	// 提交事务
-	tx.Commit()
 	return videoBOS, videos[len(videos)-1].CreateTime.UnixMilli(), nil
 }
 
