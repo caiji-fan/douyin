@@ -35,7 +35,7 @@ func TestFeed_QueryByCondition(t *testing.T) {
 
 func TestFeed_DeleteByCondition(t *testing.T) {
 	feedDao := NewFeedDaoInstance()
-	var feed = po.Feed{UserId: 1}
+	var feed = []po.Feed{{UserId: 1, VideoId: 1}, {UserId: 1, VideoId: 2}}
 	err := feedDao.DeleteByCondition(&feed, nil, false)
 	if err != nil {
 		log.Fatalln(err)

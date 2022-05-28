@@ -35,18 +35,15 @@ func (f Feed) QueryByCondition(feed *po.Feed) ([]po.Feed, error) {
 	return feeds, db1.Find(&feeds).Error
 }
 
-func (f Feed) DeleteByCondition(feed *po.Feed, tx *gorm.DB, isTx bool) error {
+func (f Feed) DeleteByCondition(feed *[]po.Feed, tx *gorm.DB, isTx bool) error {
 	var db1 *gorm.DB
 	if isTx {
 		db1 = tx
 	} else {
 		db1 = db
 	}
-	if feed.VideoId != 0 {
-		db1 = db1.Where("video_id = ?", feed.VideoId)
-	}
-	if feed.UserId != 0 {
-		db1 = db1.Where("user_id = ?", feed.UserId)
+	for _, v := range *feed {
+		db1 = db1.Where("video_id = ? and user_id = ?", v.VideoId, v.UserId)
 	}
 	return db1.Delete(po.Feed{}).Error
 }

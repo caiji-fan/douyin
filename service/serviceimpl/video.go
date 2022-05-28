@@ -38,15 +38,13 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 	var outbox []bo.Feed
 	// 可能出现的错误
 	var err error
-	// 从feed数据库中删除数据的事务
-	var tx *gorm.DB = nil
 	// 如果用户已登录，查询redis中的feed流
 	if isLogin {
 		wait := sync.WaitGroup{}
 		wait.Add(2)
 		go func() {
 			defer wait.Done()
-			inbox, tx, err = fromInbox(userId)
+			inbox, err = fromInbox(userId)
 		}()
 		go func() {
 			defer wait.Done()
@@ -54,23 +52,16 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 		}()
 		wait.Wait()
 		if err != nil {
-			if tx != nil {
-				tx.Rollback()
-			}
 			return nil, 0, err
 		}
 		videoIds, err = mergeBox(&inbox, &outbox, latestTime)
 		if err != nil {
-			if tx != nil {
-				tx.Rollback()
-			}
 			return nil, 0, err
 		}
 	}
 	// 得到视频id集合，从数据库中查询视频数据
 	videos, err = videoDao.QueryBatchIds(&videoIds, config.Config.Service.PageSize)
 	if err != nil {
-		tx.Rollback()
 		return nil, 0, err
 	}
 	// 获取查询视频的时间条件，如果从redis从查到了数据，则为数据最后一条的时间，否则为前端传来的时间
@@ -84,9 +75,6 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 	if len(videos) < config.Config.Service.PageSize {
 		videos1, err := videoDao.QueryByLatestTimeDESC(timeCondition, config.Config.Service.PageSize-len(videos))
 		if err != nil {
-			if tx != nil {
-				tx.Rollback()
-			}
 			return nil, 0, err
 		}
 		//拼接到原来数据后面
@@ -96,19 +84,18 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 	var videoBOS = make([]bo.Video, len(videos))
 	err = entityutil.GetVideoBOS(&videos, &videoBOS)
 	if err != nil {
-		if tx != nil {
-			tx.Rollback()
-		}
 		return nil, 0, err
 	}
 	// 取出部分后，重新存入数据
-	err = clearInbox(&inbox, userId)
+	tx, err := clearInbox(&inbox, userId)
 	if err != nil {
 		if tx != nil {
 			tx.Rollback()
 		}
 		return nil, 0, err
 	}
+	// 提交事务
+	tx.Commit()
 	return videoBOS, videos[len(videos)-1].CreateTime.UnixMilli(), nil
 }
 
@@ -177,28 +164,22 @@ func (v Video) VideoList(userId int) ([]bo.Video, error) {
 }
 
 // 从自己的收件箱获取
-func fromInbox(userId int) ([]bo.Feed, *gorm.DB, error) {
-	var tx *gorm.DB
+func fromInbox(userId int) ([]bo.Feed, error) {
 	var feedBOS = make([]bo.Feed, 0)
 	err := redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Inbox+strconv.Itoa(userId), &feedBOS)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	// 如果收件箱不存在，则从数据库中查询
 	if len(feedBOS) == 0 {
 		feedDao := daoimpl.NewFeedDaoInstance()
-		tx = feedDao.Begin()
 		feedPOS, err := feedDao.QueryByCondition(&po.Feed{UserId: userId})
 		if err != nil {
-			return nil, nil, err
-		}
-		err = feedDao.DeleteByCondition(&po.Feed{UserId: userId}, tx, true)
-		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		entityutil.GetFeedBOS(&feedPOS, &feedBOS)
 	}
-	return feedBOS, tx, nil
+	return feedBOS, nil
 }
 
 // 从大v的发件箱获取Feed流
@@ -312,14 +293,20 @@ func mergeFeeds(feed1 *[]bo.Feed, feed2 *[]bo.Feed) ([]bo.Feed, error) {
 
 // 清理收件箱，用户查看一次收件箱后，将收件箱中已经查看过的视频清除
 // trash 已经查看过的feed对象
-func clearInbox(trash *[]bo.Feed, userId int) error {
+func clearInbox(trash *[]bo.Feed, userId int) (*gorm.DB, error) {
+	tx := daoimpl.NewFeedDaoInstance().Begin()
+	var trashPOS = make([]po.Feed, len(*trash))
+	for i, v := range *trash {
+		trashPOS[i] = po.Feed{VideoId: v.VideoId, UserId: userId}
+	}
+	err := daoimpl.NewFeedDaoInstance().DeleteByCondition(&trashPOS, tx, true)
 	//todo 加锁,防止清理过程中的新增数据造成影响
 
 	// 获取redis中的数据
 	var feeds []bo.Feed
-	err := redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Outbox+strconv.Itoa(userId), &feeds)
+	err = redisutil.ZRevRange[bo.Feed](config.Config.Redis.Key.Outbox+strconv.Itoa(userId), &feeds)
 	if err != nil {
-		return err
+		return tx, err
 	}
 	// 获取垃圾中的视频id映射
 	var mapper = make(map[int]int, len(*trash))
@@ -346,9 +333,9 @@ func clearInbox(trash *[]bo.Feed, userId int) error {
 		false,
 		nil)
 	if err != nil {
-		return err
+		return tx, err
 	}
-	return nil
+	return tx, err
 }
 
 var (
