@@ -10,13 +10,14 @@ import (
 	"douyin/util/redisutil"
 	"github.com/robfig/cron/v3"
 	"log"
+	"os"
 	"time"
 )
 
 // StartJob 开启任务调度
 func StartJob() {
 	clearOutBoxJob()
-	clearLocalVideo()
+	clearLocalVideoJob()
 	handleErrorMSGJob()
 }
 
@@ -41,9 +42,15 @@ func handleErrorMSGJob() {
 	c.Start()
 }
 
-// todo wangyingsong 清理本地临时存储的视频
-func clearLocalVideo() {
-
+// 清理本地临时存储的视频
+func clearLocalVideoJob() {
+	c := cron.New()
+	_, err := c.AddFunc("@every 168h", clearLocalVideo)
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+	c.Start()
 }
 
 // 清理用户发件箱
@@ -52,16 +59,19 @@ func clearOutBox() {
 	err := redisutil.Keys(config.Config.Redis.Key.Outbox, &outBoxes)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	for _, key := range outBoxes {
 		var feeds = make([]bo.Feed, 0)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 		// 获取发件箱中的数据
 		err = redisutil.ZRevRange[bo.Feed](key, &feeds)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 		var index int
 		var feed bo.Feed
@@ -77,6 +87,7 @@ func clearOutBox() {
 		err = redisutil.ZRem[bo.Feed](key, &feeds, false, nil)
 		if err != nil {
 			log.Println(err)
+			return
 		}
 	}
 }
@@ -87,6 +98,7 @@ func handleErrorMSG() {
 	err := redisutil.GetAndDelete[[]bo.RabbitMSG[interface{}]](config.Config.Redis.Key.ErrorMessage, &msgS)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	for _, msg := range msgS {
 		switch msg.Type {
@@ -113,5 +125,36 @@ func handleErrorMSG() {
 				log.Println(err)
 			}
 		}
+	}
+}
+
+// 清理本地临时存储的视频
+func clearLocalVideo() {
+	// 获得两周前的日期
+	now := time.Now().AddDate(0, 0, -14).Format(config.Config.StandardDate)
+	// 拼接两周前的视频和文件路径
+	videoPath := config.Config.Service.VideoTempDir + now
+	coverPath := config.Config.Service.CoverTempDir + now
+	// 判断视频路径是否存在并删除
+	_, err := os.Stat(videoPath)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = os.RemoveAll(videoPath)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	// 判断封面路径是否存在并删除
+	_, err = os.Stat(coverPath)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = os.RemoveAll(coverPath)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 }
