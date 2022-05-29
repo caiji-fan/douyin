@@ -27,15 +27,15 @@ func ChangeFollowNum(userId int, toUserId int, isFollow bool) error {
 	// 服务端声明
 	err := producerInit(
 		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.UploadVideo,
-		config.Config.Rabbit.Key.UploadVideo,
+		config.Config.Rabbit.Queue.ChangeFollowNum,
+		config.Config.Rabbit.Key.ChangeFollowNum,
 	)
 	if err != nil {
 		return err
 	}
 	var body = ChangeFollowNumBody{UserId: userId, ToUserId: toUserId, IsFollow: isFollow}
 	// 创建消息与管道
-	rabbitMSG := bo.RabbitMSG{Data: body, ResendCount: 0, Type: bo.CHANGE_FOLLOW_NUM}
+	rabbitMSG := bo.RabbitMSG[ChangeFollowNumBody]{Data: body, ResendCount: 0, Type: bo.CHANGE_FOLLOW_NUM}
 	return Publish(&rabbitMSG,
 		config.Config.Rabbit.Exchange.ServiceExchange,
 		config.Config.Rabbit.Key.ChangeFollowNum)
@@ -55,10 +55,10 @@ func UploadVideo(videoId int) error {
 		return err
 	}
 	// 创建消息与管道
-	rabbitMSG := bo.RabbitMSG{Data: videoId, ResendCount: 0, Type: bo.UPLOAD_VIDEO}
+	rabbitMSG := bo.RabbitMSG[int]{Data: videoId, ResendCount: 0, Type: bo.UPLOAD_VIDEO}
 	return Publish(&rabbitMSG,
 		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Key.FeedVideo)
+		config.Config.Rabbit.Key.UploadVideo)
 }
 
 // FeedVideo 			投放视频到用户feed流
@@ -74,14 +74,14 @@ func FeedVideo(videoId int) error {
 		return err
 	}
 	// 创建消息与管道
-	rabbitMSG := bo.RabbitMSG{Data: videoId, ResendCount: 0, Type: bo.FEED_VIDEO}
+	rabbitMSG := bo.RabbitMSG[int]{Data: videoId, ResendCount: 0, Type: bo.FEED_VIDEO}
 	return Publish(&rabbitMSG,
 		config.Config.Rabbit.Exchange.ServiceExchange,
 		config.Config.Rabbit.Key.FeedVideo)
 }
 
 // Publish 发布消息
-func Publish(rabbitMSG *bo.RabbitMSG, exchange string, key string) error {
+func Publish[T any](rabbitMSG *bo.RabbitMSG[T], exchange string, key string) error {
 	data, err := json.Marshal(rabbitMSG)
 	if err != nil {
 		return err

@@ -14,7 +14,6 @@ import (
 	"github.com/go-redis/redis"
 	"log"
 	"strconv"
-	"sync"
 )
 
 // 初始化consumer
@@ -42,15 +41,15 @@ func changeFollowNumConsumer() {
 	// 协程处理消费
 	go func() {
 		for msg := range consume {
-			var rabbitMSG bo.RabbitMSG
+			var rabbitMSG bo.RabbitMSG[ChangeFollowNumBody]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
-			failOnError(err, &rabbitMSG)
-			changeFollowNumBody := rabbitMSG.Data.(ChangeFollowNumBody)
+			failOnError[ChangeFollowNumBody](err, &rabbitMSG)
+			changeFollowNumBody := rabbitMSG.Data
 			err = doChangeFollowNum(&changeFollowNumBody)
-			failOnError(err, &rabbitMSG)
+			failOnError[ChangeFollowNumBody](err, &rabbitMSG)
 			err = msg.Ack(true)
-			failOnError(err, &rabbitMSG)
+			failOnError[ChangeFollowNumBody](err, &rabbitMSG)
 		}
 	}()
 }
@@ -72,28 +71,28 @@ func uploadVideoConsumer() {
 	// 协程处理消费
 	go func() {
 		for msg := range consume {
-			var rabbitMSG bo.RabbitMSG
+			var rabbitMSG bo.RabbitMSG[int]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
-			failOnError(err, &rabbitMSG)
+			failOnError[int](err, &rabbitMSG)
 			//查询video数据
-			videoId, _ := rabbitMSG.Data.(int)
+			videoId := rabbitMSG.Data
 			err = doUploadVideo(videoId)
-			failOnError(err, &rabbitMSG)
+			failOnError[int](err, &rabbitMSG)
 			// 确认收到消息
 			err = msg.Ack(true)
-			failOnError(err, &rabbitMSG)
+			failOnError[int](err, &rabbitMSG)
 		}
 	}()
 }
 
 //错误处理
-func failOnError(err error, rabbitMSG *bo.RabbitMSG) {
+func failOnError[T any](err error, rabbitMSG *bo.RabbitMSG[T]) {
 	if err != nil {
 		if int(rabbitMSG.ResendCount) > config.Config.Rabbit.ResendMax {
 			// todo 报警
 		}
-		handleError(rabbitMSG)
+		handleError[T](rabbitMSG)
 		log.Println(err)
 	}
 }
@@ -115,28 +114,28 @@ func feedVideoConsumer() {
 	// 协程处理消费
 	go func() {
 		for msg := range consume {
-			var rabbitMSG bo.RabbitMSG
+			var rabbitMSG bo.RabbitMSG[int]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
-			failOnError(err, &rabbitMSG)
+			failOnError[int](err, &rabbitMSG)
 			//查询video数据
-			videoId, _ := rabbitMSG.Data.(int)
+			videoId := rabbitMSG.Data
 			err = doFeedVideo(videoId)
-			failOnError(err, &rabbitMSG)
+			failOnError[int](err, &rabbitMSG)
 			err = msg.Ack(true)
-			failOnError(err, &rabbitMSG)
+			failOnError[int](err, &rabbitMSG)
 		}
 	}()
 }
 
 // 消息补偿机制
-func handleError(msg *bo.RabbitMSG) {
-	var rabbitMSGS = make([]bo.RabbitMSG, 0)
-	err := redisutil.Get(config.Config.Redis.Key.ErrorMessage, &rabbitMSGS)
-	failOnError(err, msg)
+func handleError[T any](msg *bo.RabbitMSG[T]) {
+	var rabbitMSGS = make([]bo.RabbitMSG[T], 0)
+	err := redisutil.Get[[]bo.RabbitMSG[T]](config.Config.Redis.Key.ErrorMessage, &rabbitMSGS)
+	failOnError[T](err, msg)
 	rabbitMSGS = append(rabbitMSGS, *msg)
 	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitMSGS)
-	failOnError(err, msg)
+	failOnError[T](err, msg)
 }
 
 // rabbit服务器初始化
@@ -196,37 +195,21 @@ func doChangeFollowNum(body *ChangeFollowNumBody) error {
 	tx := daoimpl.NewUserDaoInstance().Begin()
 	var difference int
 	if body.IsFollow {
-		difference = -1
-	} else {
 		difference = 1
+	} else {
+		difference = -1
 	}
-	wait := sync.WaitGroup{}
-	wait.Add(2)
-	//增减发起关注的一方
-	go func() {
-		defer wait.Done()
-		var user *po.User
-		user, err = daoimpl.NewUserDaoInstance().QueryForUpdate(body.UserId, tx)
-		if err != nil {
-			return
-		}
-		user.FollowCount = user.FollowCount + difference
-		err = daoimpl.NewUserDaoInstance().UpdateByCondition(user, tx, true)
-	}()
-	//增减收到关注的一方
-	go func() {
-		defer wait.Done()
-		var user *po.User
-		user, err = daoimpl.NewUserDaoInstance().QueryForUpdate(body.ToUserId, tx)
-		if err != nil {
-			return
-		}
-		user.FollowerCount = user.FollowerCount + difference
-		err = daoimpl.NewUserDaoInstance().UpdateByCondition(user, tx, true)
-	}()
-	wait.Wait()
+	// 增减发起请求的一方
+	err = daoimpl.NewUserDaoInstance().ChangeFollowCount(body.UserId, difference, tx, true)
 	if err != nil {
 		tx.Rollback()
+		return err
+	}
+	// 增减接收请求的一方
+	err = daoimpl.NewUserDaoInstance().ChangeFansCount(body.ToUserId, difference, tx, true)
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
 	tx.Commit()
 	return nil
@@ -243,11 +226,18 @@ func doUploadVideo(videoId int) error {
 		return nil
 	}
 	//上传视频
-	url, err := obsutil.Upload(video.PlayUrl, config.Config.Obs.Buckets.Video)
-	video.PlayUrl = url
+	videoUrl, err := obsutil.Upload(video.PlayUrl, config.Config.Obs.Buckets.Video)
+	video.PlayUrl = videoUrl
 	if err != nil {
 		return err
 	}
+	// 上传封面
+	coverUrl, err := obsutil.Upload(video.CoverUrl, config.Config.Obs.Buckets.Cover)
+	if err != nil {
+		return err
+	}
+	video.CoverUrl = coverUrl
+
 	// 更新数据库
 	err = daoimpl.NewVideoDaoInstance().UpdateByCondition(video, nil, false)
 	if err != nil {
@@ -266,26 +256,16 @@ func doFeedVideo(videoId int) error {
 	if video.ID == 0 {
 		return nil
 	}
+	// 获取投稿人的信息
 	sender, err := daoimpl.NewUserDaoInstance().QueryById(video.AuthorId)
 	if err != nil {
 		return err
 	}
-	var videos []bo.Feed
+	// 取得需要存入redis的value
+	var value = []redis.Z{{Score: float64(video.CreateTime.UnixMilli()), Member: video}}
 	//大v用户
-	if sender.FollowCount >= config.Config.Service.BigVNum {
-		err = redisutil.ZGet(config.Config.Redis.Key.Outbox+strconv.Itoa(sender.ID), &videos)
-		if err != nil {
-			return err
-		}
-		videos = append(videos, bo.Feed{VideoId: videoId, CreateTime: video.CreateTime})
-		var value = make([]redis.Z, len(videos))
-		for i, v := range videos {
-			value[i] = redis.Z{
-				Score:  float64(v.CreateTime.UnixMilli()),
-				Member: v,
-			}
-		}
-		err = redisutil.ZSetWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(sender.ID),
+	if sender.FollowerCount >= config.Config.Service.BigVNum {
+		err = redisutil.ZAddWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(sender.ID),
 			value,
 			config.OutboxExpireTime,
 			false,
@@ -293,7 +273,7 @@ func doFeedVideo(videoId int) error {
 		if err != nil {
 			return err
 		}
-	} else {
+	} else if sender.FollowerCount > 0 {
 		//普通用户
 		userIds, err := daoimpl.NewRelationDaoInstance().QueryFansIdByFollowId(video.AuthorId)
 		if err != nil {
@@ -308,37 +288,22 @@ func doFeedVideo(videoId int) error {
 		// feed集合，用户持久化
 		var feeds = make([]po.Feed, 0)
 		for _, user := range *users {
-			err = redisutil.ZGet(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID), &videos)
+			// 增加到用户的发件箱中,向用户投放不影响用户的收件箱过期时间
+			err = redisutil.ZAdd(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID),
+				value,
+				true,
+				pipeline)
 			if err != nil {
+				err1 := pipeline.Discard()
+				if err1 != nil {
+					return err1
+				}
 				return err
 			}
-			// 不存在收件箱，则入库
-			if videos == nil {
-				feeds = append(feeds, po.Feed{UserId: user.ID, VideoId: videoId})
-			} else {
-				videos = append(videos, bo.Feed{VideoId: videoId, CreateTime: video.CreateTime})
-				var value = make([]redis.Z, len(videos))
-				for i, v := range videos {
-					value[i] = redis.Z{
-						Score:  float64(v.CreateTime.UnixMilli()),
-						Member: v,
-					}
-				}
-				err = redisutil.ZSetWithExpireTime(config.Config.Redis.Key.Inbox+strconv.Itoa(user.ID),
-					value,
-					config.InboxExpireTime,
-					true,
-					pipeline)
-				if err != nil {
-					err1 := pipeline.Discard()
-					if err1 != nil {
-						return err1
-					}
-					return err
-				}
-			}
+			// 记录需要入库的数据
+			feeds = append(feeds, po.Feed{UserId: user.ID, VideoId: videoId})
 		}
-		// 开始feed持久化
+		// 开始feed持久化，对数据入库
 		feedDao := daoimpl.NewFeedDaoInstance()
 		tx := feedDao.Begin()
 		err = feedDao.InsertBatch(&feeds, tx, true)

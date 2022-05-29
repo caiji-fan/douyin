@@ -17,7 +17,7 @@ type Feed interface {
 	QueryByCondition(feed *po.Feed) ([]po.Feed, error)
 
 	// DeleteByCondition 条件删除
-	DeleteByCondition(feed *po.Feed, tx *gorm.DB, isTx bool) error
+	DeleteByCondition(feed *[]po.Feed, tx *gorm.DB, isTx bool) error
 
 	// Begin 开启事务
 	Begin() *gorm.DB
