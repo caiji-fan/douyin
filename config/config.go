@@ -33,12 +33,12 @@ var Config *config
 
 // 读取yml文件
 func readConfig() {
-	file, err := ioutil.ReadFile("./config/config.yml")
+	file, err := ioutil.ReadFile("../../config/config.yml")
 	if err != nil {
 		log.Fatalln("读取文件config.yml发生错误", err)
 		return
 	}
-	if yaml.Unmarshal(file, Config) != nil {
+	if err := yaml.Unmarshal(file, Config); err != nil {
 		log.Fatalln("解析文件config.yml发生错误", err)
 		return
 	}

@@ -68,3 +68,18 @@ func TestVideo_mergeFeeds(t *testing.T) {
 		}
 	}
 }
+
+func TestVideo_generateCover(t *testing.T) {
+	cover, err := generateCover("C:\\Users\\lenovo\\Videos\\Captures\\abc.mp4")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(cover)
+}
+
+func TestVideo_checkDIR(t *testing.T) {
+	err := checkDIR()
+	if err != nil {
+		panic(err)
+	}
+}

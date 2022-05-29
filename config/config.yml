@@ -7,7 +7,7 @@ server:
 # 数据库连接信息
 database:
   # 连接url
-  dsn: "root:root@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "root:curry@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
   # 连接池参数
   pool:
     # 最长空闲时间
@@ -81,11 +81,12 @@ thread-local:
   keys:
     user-id: "user_id"
 service:
+  ffmpeg-path: "D:\\software_install\\ffmpeg\\ffmpeg-4.4-full_build\\bin\\"
   # 标识大v的粉丝数
   big-v-num: 1000000
   # 临时路径
-  video-temp-dir: "/public/dy/video/"
-  cover-temp-dir: "/public/dy/cover/"
+  video-temp-dir: "../../public/dy/video/"
+  cover-temp-dir: "../../public/dy/cover/"
   # 分页大小
   page-size: 10
 jwt:

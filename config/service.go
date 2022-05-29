@@ -8,4 +8,5 @@ type service struct {
 	VideoTempDir string `yaml:"video-temp-dir"`
 	CoverTempDir string `yaml:"cover-temp-dir"`
 	PageSize     int    `yaml:"page-size"`
+	FFMPEGPath   string `yaml:"ffmpeg-path"`
 }

@@ -58,35 +58,29 @@ func Feed(ctx *gin.Context) {
 func Publish(ctx *gin.Context) {
 
 	// 通过线程获取投稿人id
-	authorId, err := strconv.Atoi(config.Config.ThreadLocal.Keys.UserId)
+	authorId, err := strconv.Atoi(middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId])
 	if err != nil {
-
-	}
-
-	// 通过请求参数获取视频标题
-	var videoParam param.Video
-	err = ctx.ShouldBindQuery(&videoParam)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoParam))))
+		ctx.JSON(http.StatusInternalServerError, response.SystemError)
 		return
 	}
 
-	// 获取视频本地地址
-	video, err := ctx.FormFile("video")
+	// 通过请求参数获取视频标题
+	var publishParam param.Publish
+	err = ctx.Bind(&publishParam)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, publishParam))))
+		return
+	}
+
+	// 获取视频文件
+	video, err := ctx.FormFile("data")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.VideoNotFound))
 		return
 	}
 
-	// 获取封面本地地址
-	cover, err := ctx.FormFile("cover")
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, cover))))
-		return
-	}
-
 	// 发布
-	err = serviceimpl.NewVideoServiceInstance().Publish(ctx, video, cover, authorId, videoParam.Title)
+	err = serviceimpl.NewVideoServiceInstance().Publish(ctx, video, authorId, publishParam.Title)
 	if err != nil {
 		ctx.JSON(http.StatusProxyAuthRequired, response.ErrorResponse(err))
 		return
@@ -108,7 +102,8 @@ func VideoList(ctx *gin.Context) {
 
 	boVideos, err := serviceimpl.NewVideoServiceInstance().VideoList(videoList.UserID)
 	if err != nil {
-
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+		return
 	}
 	ctx.JSON(http.StatusOK, response.VideoList{
 		Response:  response.Ok,

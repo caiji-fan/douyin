@@ -6,8 +6,8 @@ package param
 type Feed struct {
 }
 
-// Video 投稿
-type Video struct {
+// Publish 投稿
+type Publish struct {
 	Title string `form:"title"  binding:"required" msg:"标题为空标题"`
 }
 

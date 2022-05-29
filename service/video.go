@@ -22,7 +22,7 @@ type Video interface {
 	// file 			视频文件
 	// userId 			用户id
 	// ctx				上下文，用于保存视频到本地
-	Publish(ctx *gin.Context, video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) error
+	Publish(ctx *gin.Context, video *multipart.FileHeader, userId int, title string) error
 
 	// VideoList 		查看视频发布列表
 	// userId			用户id

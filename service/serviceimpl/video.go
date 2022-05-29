@@ -4,6 +4,7 @@
 package serviceimpl
 
 import (
+	"bytes"
 	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/po"
@@ -15,7 +16,10 @@ import (
 	"douyin/util/redisutil"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"log"
 	"mime/multipart"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -101,19 +105,25 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 }
 
 // Publish check token then save upload file to public directory
-func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, cover *multipart.FileHeader, userId int, title string) error {
-	// 视频、封面本地保存
+func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, userId int, title string) error {
+	// 检查临时路径是否存在，不存在则创建
+	err := checkDIR()
+	if err != nil {
+		return err
+	}
+	now := time.Now().Format(config.Config.StandardDate)
+	// 将视频保存到本地
 	videoName := obsutil.ParseFileName(filepath.Base(video.Filename))
-	videoSaveFile := filepath.Join(config.Config.Service.VideoTempDir, videoName)
+	videoSaveFile := filepath.Join(config.Config.Service.VideoTempDir, now, videoName)
 	if err := c.SaveUploadedFile(video, videoSaveFile); err != nil {
 		return err
 	}
-
-	coverName := obsutil.ParseFileName(filepath.Base(cover.Filename))
-	coverSaveFile := filepath.Join(config.Config.Service.CoverTempDir, coverName)
-	if err := c.SaveUploadedFile(video, coverSaveFile); err != nil {
+	// 生成封面文件
+	coverSaveFile, err := generateCover(videoSaveFile)
+	if err != nil {
 		return err
 	}
+	// 数据入库
 	var videoDB = daoimpl.NewVideoDaoInstance()
 	var tx = videoDB.Begin()
 	videoPo := po.Video{
@@ -124,7 +134,7 @@ func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, cover *multi
 		AuthorId:      userId,
 		Title:         title,
 	}
-	err := videoDB.Insert(tx, &videoPo, true)
+	err = videoDB.Insert(tx, &videoPo, true)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -328,6 +338,70 @@ func clearInbox(trash *[]bo.Feed, userId int) (*gorm.DB, error) {
 		return tx, err
 	}
 	return tx, err
+}
+
+// 生成视频封面
+func generateCover(path string) (string, error) {
+	// 获得两周前的日期
+	now := time.Now().Format(config.Config.StandardDate)
+	coverPath := filepath.Join(config.Config.Service.CoverTempDir+now, obsutil.ParseFileName("xxx.jpg"))
+	cmd := exec.Command(config.Config.Service.FFMPEGPath+"ffmpeg", "-i", path,
+		"-vframes", "1", "-f", "singlejpeg", coverPath)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		log.Println(stderr.String())
+		return "", err
+	}
+	return coverPath, nil
+}
+
+// 检查视频和封面的临时目录，不存在则创建
+func checkDIR() error {
+	// 获得两周前的日期
+	now := time.Now().Format(config.Config.StandardDate)
+	// 拼接两周前的视频和文件路径
+	videoPath, err := filepath.Abs(config.Config.Service.VideoTempDir + now)
+	if err != nil {
+		return err
+	}
+	coverPath, err := filepath.Abs(config.Config.Service.CoverTempDir + now)
+	if err != nil {
+		return err
+	}
+	//videoPath := config.Config.Service.VideoTempDir + now
+	//coverPath := config.Config.Service.CoverTempDir + now
+
+	// 判断视频路径是否存在
+	_, err = os.Stat(videoPath)
+	// 视频目录不存在
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(videoPath, os.ModeDir)
+		if err != nil {
+			return err
+		}
+	} else {
+		if err != nil {
+			return err
+		}
+	}
+
+	// 判断视频路径是否存在并删除
+	_, err = os.Stat(coverPath)
+	// 视频目录不存在
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(coverPath, os.ModeDir)
+		if err != nil {
+			return err
+		}
+	} else {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 var (
