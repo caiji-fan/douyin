@@ -9,7 +9,6 @@ import (
 	"douyin/repositories/daoimpl"
 	route2 "douyin/route"
 	"douyin/util/jwtutil"
-	"douyin/util/rabbitutil"
 	"douyin/util/redisutil"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -36,6 +35,6 @@ func init() {
 	jwtutil.InitJWT()
 	// redis初始化
 	redisutil.Init()
-	// 消息队列初始化
-	rabbitutil.Init()
+	//// 消息队列初始化
+	//rabbitutil.Init()
 }

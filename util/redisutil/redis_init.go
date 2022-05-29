@@ -2,9 +2,8 @@ package redisutil
 
 import (
 	"douyin/config"
-	"log"
-
 	"github.com/go-redis/redis"
+	"log"
 )
 
 var RedisDB *redis.Client
@@ -14,7 +13,7 @@ func Init() {
 	// 建立连接
 	RedisDB = redis.NewClient(&redis.Options{
 		Addr:     config.Config.Redis.Url,
-		Password: "",
+		Password: "123456",
 		DB:       0,
 	})
 	err := RedisDB.Ping().Err()

@@ -9,6 +9,7 @@ import (
 	"douyin/entity/response"
 	"douyin/service/serviceimpl"
 	"douyin/util/webutil"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -40,6 +41,7 @@ func FavoriteList(ctx *gin.Context) {
 
 	err := ctx.ShouldBindQuery(&favoriteListParam)
 
+	fmt.Println("----------------------------------------", favoriteListParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, favoriteListParam))))
 		return

@@ -7,7 +7,7 @@ server:
 # 数据库连接信息
 database:
   # 连接url
-  dsn: "root:curry@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
+  dsn: "root:root@tcp(localhost:3306)/douyin?charset=utf8mb4&parseTime=True&loc=Local"
   # 连接池参数
   pool:
     # 最长空闲时间
@@ -46,7 +46,7 @@ rabbit:
 # redis配置信息
 redis:
   # redis连接url
-  url: "localhost:6379"
+  url: "124.70.69.180:6379"
   # redis键名
   key:
     # 用户token
