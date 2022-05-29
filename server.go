@@ -6,6 +6,7 @@ package main
 
 import (
 	"douyin/config"
+	"douyin/job"
 	"douyin/repositories/daoimpl"
 	route2 "douyin/route"
 	"douyin/util/jwtutil"
@@ -38,6 +39,6 @@ func init() {
 	redisutil.Init()
 	// 消息队列初始化
 	rabbitutil.Init()
-	// todo 开启定时任务
-	//job.StartJob()
+	// 开始定时任务
+	job.StartJob()
 }
