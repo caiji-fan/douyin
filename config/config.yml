@@ -59,6 +59,8 @@ redis:
     inbox: "inbox:"
     # 大v发件箱
     outbox: "outbox:"
+    # 清理用户发件箱的锁
+    clear-lock: "clearLock"
   # 各个数据过期时间,数字+字符；如1s表示1秒
   expire-time:
     # 用户登录信息
@@ -74,6 +76,7 @@ obs:
   location: "cn-north-4"
   buckets:
     video: "dy-video"
+    cover: "dy-cover"
 thread-local:
   keys:
     user-id: "user_id"

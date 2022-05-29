@@ -17,7 +17,7 @@ import (
 // src				评论PO集
 // dest 			评论bo集
 func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
-	if dest == nil || len(*dest) < len(*src) {
+	if *dest == nil || len(*dest) < len(*src) {
 		*dest = make([]bo.Comment, len(*src))
 	}
 	var i = 0
@@ -65,7 +65,7 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 // src				视频PO集
 // dest				视频BO集
 func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
-	if dest == nil || len(*dest) < len(*src) {
+	if *dest == nil || len(*dest) < len(*src) {
 		*dest = make([]bo.Video, len(*src))
 	}
 	var ids = make([]int, len(*src), len(*src)*4)
@@ -132,7 +132,7 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 // src				用户PO集
 // dest 			用户BO集
 func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
-	if dest == nil || len(*dest) < len(*users) {
+	if *dest == nil || len(*dest) < len(*users) {
 		*dest = make([]bo.User, len(*users))
 	}
 	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
@@ -199,7 +199,7 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 // src			FeedPO集合
 // dest			FeedBO集合
 func GetFeedBOS(src *[]po.Feed, dest *[]bo.Feed) {
-	if dest == nil || cap(*dest) < len(*src) {
+	if *dest == nil || cap(*dest) < len(*src) {
 		temp := make([]bo.Feed, len(*src))
 		dest = &temp
 	}

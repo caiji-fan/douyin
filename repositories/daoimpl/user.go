@@ -13,6 +13,26 @@ import (
 type UserImpl struct {
 }
 
+func (i UserImpl) ChangeFollowCount(userId, difference int, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
+	return db1.Model(&po.User{EntityModel: po.EntityModel{ID: userId}}).UpdateColumn("follow_count", gorm.Expr("follow_count + ?", difference)).Error
+}
+
+func (i UserImpl) ChangeFansCount(userId, difference int, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
+	return db1.Model(&po.User{EntityModel: po.EntityModel{ID: userId}}).UpdateColumn("follower_count", gorm.Expr("follower_count + ?", difference)).Error
+}
+
 var (
 	user     repositories.User
 	userOnce sync.Once

@@ -46,4 +46,10 @@ type User interface {
 
 	//QueryFans 查询粉丝列表并且时间倒序
 	QueryFans(userId int) (*[]po.User, error)
+
+	// ChangeFollowCount 修改关注数量
+	ChangeFollowCount(userId, difference int, tx *gorm.DB, isTx bool) error
+
+	// ChangeFansCount 修改粉丝数量
+	ChangeFansCount(userId, difference int, tx *gorm.DB, isTx bool) error
 }
