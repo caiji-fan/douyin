@@ -102,7 +102,7 @@ func (i UserImpl) UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error
 
 //QueryFollows 查询关注列表并且时间倒序
 func (i UserImpl) QueryFollows(userId int) (*[]po.User, error) {
-	var poUsers = make([]po.User, 5)
+	var poUsers = make([]po.User, 0)
 	err := db.Raw("SELECT  u.*  FROM dy_user AS u,dy_follow AS f WHERE f.follower_id=? AND u.id=f.follow_id ORDER BY f.update_time DESC", userId).Scan(&poUsers).Error
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (i UserImpl) QueryFollows(userId int) (*[]po.User, error) {
 
 //QueryFans 查询粉丝列表并且时间倒序
 func (i UserImpl) QueryFans(userId int) (*[]po.User, error) {
-	var poUsers = make([]po.User, 5)
+	var poUsers = make([]po.User, 0)
 	err := db.Raw("SELECT  u.*  FROM dy_user AS u,dy_follow AS f WHERE f.follow_id=? AND u.id=f.follower_id ORDER BY f.update_time DESC", userId).Scan(&poUsers).Error
 	if err != nil {
 		return nil, err
