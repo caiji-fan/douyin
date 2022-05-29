@@ -195,3 +195,14 @@ func TTL(key string) (time.Duration, error) {
 func Begin() redis.Pipeliner {
 	return RedisDB.TxPipeline()
 }
+
+// Expire 	设置键的过期时间
+// key		键
+// duration	过期时间
+func Expire(key string, duration time.Duration) error {
+	_, err := RedisDB.Expire(key, duration).Result()
+	if err != nil {
+		return err
+	}
+	return nil
+}

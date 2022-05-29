@@ -311,6 +311,14 @@ func clearInbox(trash *[]bo.Feed, userId int) (*gorm.DB, error) {
 		trashPOS[i] = po.Feed{VideoId: v.VideoId, UserId: userId}
 	}
 	err := daoimpl.NewFeedDaoInstance().DeleteByCondition(&trashPOS, tx, true)
+	if err != nil {
+		return tx, err
+	}
+	// 刷新收件箱的过期时间
+	err = redisutil.Expire(config.Config.Redis.Key.Inbox+strconv.Itoa(userId), config.InboxExpireTime)
+	if err != nil {
+		return tx, nil
+	}
 	// 删除垃圾数据
 	err = redisutil.ZRem[bo.Feed](config.Config.Redis.Key.Inbox+strconv.Itoa(userId),
 		trash,

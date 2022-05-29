@@ -43,6 +43,24 @@ func TestSet(t *testing.T) {
 }
 
 // pass
+func TestSet2(t *testing.T) {
+	err := Set("test2", "456")
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+// pass
+func TestGet2(t *testing.T) {
+	var val string
+	err := Get[string]("test2", &val)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(val)
+}
+
+// pass
 func TestGet(t *testing.T) {
 	var val TestRedis
 	err := Get[TestRedis]("test", &val)
@@ -86,8 +104,8 @@ func TestTTL(t *testing.T) {
 // pass
 func TestZAdd(t *testing.T) {
 	var value = make([]redis.Z, 2)
-	time1, _ := time.Parse(config.Config.StandardTime, "2002-2-2")
-	time2, _ := time.Parse(config.Config.StandardTime, "2002-2-3")
+	time1, _ := time.Parse(config.Config.StandardDate, "2002-2-2")
+	time2, _ := time.Parse(config.Config.StandardDate, "2002-2-3")
 	value[0] = redis.Z{Score: 1, Member: TestRedis2{Value: "123", Date: time1}}
 	value[1] = redis.Z{Score: 1, Member: TestRedis2{Value: "456", Date: time2}}
 	err := ZAdd("test", value, false, nil)
@@ -98,8 +116,8 @@ func TestZAdd(t *testing.T) {
 
 // pass
 func TestZRem(t *testing.T) {
-	time1, _ := time.Parse(config.Config.StandardTime, "2002-2-2")
-	time2, _ := time.Parse(config.Config.StandardTime, "2002-2-3")
+	time1, _ := time.Parse(config.Config.StandardDate, "2002-2-2")
+	time2, _ := time.Parse(config.Config.StandardDate, "2002-2-3")
 	var value = []TestRedis2{{Value: "123", Date: time1}, {Value: "456", Date: time2}}
 	err := ZRem[TestRedis2]("test", &value, false, nil)
 	if err != nil {
