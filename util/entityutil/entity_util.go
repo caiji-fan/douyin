@@ -141,22 +141,22 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 		return err
 	}
 	//todo测试用
-	//uid := 1 //测试用
-	allFansId, err := daoimpl.NewRelationDaoInstance().QueryFansIdByFollowId(uid)
-	//查出目前用户的所有粉丝
-	var fansMap = make(map[int]int, len(allFansId))
+	//uid := 111 //测试用
+	allFollowsId, err := daoimpl.NewRelationDaoInstance().QueryFollowIdByFansId(uid)
+	//查出目前用户关注的所有的人的id
+	var followsMap = make(map[int]int, len(allFollowsId))
 	if err != nil {
 		return err
 	}
-	for _, fan := range allFansId {
-		fansMap[fan] = uid //key=粉丝id；value=目前用户id
+	for _, follow := range allFollowsId {
+		followsMap[follow] = uid //key=关注的人的id；value=目前用户id
 	}
 	for i, poUser := range *users {
 		(*dest)[i].ID = poUser.ID
 		(*dest)[i].Name = poUser.Name
 		(*dest)[i].FollowCount = poUser.FollowerCount
 		(*dest)[i].FollowerCount = poUser.FollowerCount
-		_, boool := fansMap[poUser.ID]
+		_, boool := followsMap[poUser.ID]
 		(*dest)[i].IsFollow = boool
 	}
 	return nil
@@ -173,16 +173,16 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 		return err
 	}
 	//todo单元测试暂改
-	//uid := 1 //单元测试用
+	//uid := 111//单元测试用
 	var poFollow = po.Follow{
-		FollowId:   uid,
-		FollowerId: (*src).ID,
+		FollowId:   (*src).ID,
+		FollowerId: uid,
 	}
 	poFollows, err := daoimpl.NewRelationDaoInstance().QueryByCondition(&poFollow)
 	if err != nil {
 		return err
 	}
-	if poFollows == nil {
+	if len(*poFollows) == 0 {
 		(*dest).IsFollow = false
 	} else {
 		(*dest).IsFollow = true
