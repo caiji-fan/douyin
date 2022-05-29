@@ -91,4 +91,4 @@ service:
 jwt:
   expire-time: 86400
   secret-key: "douyinQ"
-standard-time: "2006-01-02 15:04:05"
+standard-date: "2006-01-02"
