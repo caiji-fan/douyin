@@ -63,7 +63,7 @@ func FansList(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, fansListParam))))
 		return
 	}
-	userList, err := relationService.FollowList(fansListParam.UserID)
+	userList, err := relationService.FansList(fansListParam.UserID)
 	if err != nil {
 		ctx.JSON(http.StatusForbidden, response.SystemError)
 		return
