@@ -144,29 +144,23 @@ func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, userId int, 
 		tx.Rollback()
 		return err
 	}
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	// 消息队列异步上传视频， 并更新视频、封面的URL信息， 删除本地视频
-	go func() {
-		defer wg.Done()
-		err = rabbitutil.UploadVideo(videoPo.ID)
-	}()
-	// 消息队列异步将视频加入feed流,正确响应
-	go func() {
-		err = rabbitutil.FeedVideo(videoPo.ID)
-		wg.Done()
-	}()
-	wg.Wait()
+	err = rabbitutil.UploadVideo(videoPo.ID)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
+	err = rabbitutil.FeedVideo(videoPo.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
 	return nil
 }
 
 func (v Video) VideoList(userId int) ([]bo.Video, error) {
 	// 查询数据库获取投稿列表
-	poVideoList, err := daoimpl.NewVideoDaoInstance().QueryVideosByUserId(userId)
+	poVideoList, err := daoimpl.NewVideoDaoInstance().QueryByConditionTimeDESC(&po.Video{AuthorId: userId})
 	if err != nil {
 		return nil, err
 	}
@@ -379,8 +373,6 @@ func checkDIR() error {
 	if err != nil {
 		return err
 	}
-	//videoPath := config.Config.Service.VideoTempDir + now
-	//coverPath := config.Config.Service.CoverTempDir + now
 
 	// 判断视频路径是否存在
 	_, err = os.Stat(videoPath)

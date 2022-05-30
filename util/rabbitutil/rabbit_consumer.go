@@ -17,15 +17,38 @@ import (
 )
 
 // 初始化consumer
-func initConsumer() {
-	initRabbitServer()
-	changeFollowNumConsumer()
-	uploadVideoConsumer()
-	feedVideoConsumer()
+func initConsumer() error {
+	if err := initServer(); err != nil {
+		return err
+	}
+	if err := changeFollowNumConsumer(); err != nil {
+		return err
+	}
+	if err := uploadVideoConsumer(); err != nil {
+		return err
+	}
+	if err := feedVideoConsumer(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// 初始化rabbitmq服务器
+func initServer() error {
+	if err := initFeedVideo(); err != nil {
+		return err
+	}
+	if err := initUploadVideo(); err != nil {
+		return err
+	}
+	if err := initChangeFollowNum(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // 修改关注数量消费
-func changeFollowNumConsumer() {
+func changeFollowNumConsumer() error {
 	consume, err := channel.Consume(
 		config.Config.Rabbit.Queue.ChangeFollowNum,
 		"",
@@ -36,7 +59,7 @@ func changeFollowNumConsumer() {
 		nil,
 	)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 	// 协程处理消费
 	go func() {
@@ -52,12 +75,13 @@ func changeFollowNumConsumer() {
 			failOnError[ChangeFollowNumBody](err, &rabbitMSG)
 		}
 	}()
+	return nil
 }
 
 // 上传视频消费
-func uploadVideoConsumer() {
+func uploadVideoConsumer() error {
 	consume, err := channel.Consume(
-		config.Config.Rabbit.Queue.UploadVideo,
+		config.Config.Rabbit.Queue.DeadUploadVideo,
 		"",
 		false,
 		false,
@@ -66,7 +90,7 @@ func uploadVideoConsumer() {
 		nil,
 	)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 	// 协程处理消费
 	go func() {
@@ -84,6 +108,7 @@ func uploadVideoConsumer() {
 			failOnError[int](err, &rabbitMSG)
 		}
 	}()
+	return nil
 }
 
 //错误处理
@@ -98,9 +123,9 @@ func failOnError[T any](err error, rabbitMSG *bo.RabbitMSG[T]) {
 }
 
 // 投放视频流消费
-func feedVideoConsumer() {
+func feedVideoConsumer() error {
 	consume, err := channel.Consume(
-		config.Config.Rabbit.Queue.FeedVideo,
+		config.Config.Rabbit.Queue.DeadFeedVideo,
 		"",
 		false,
 		false,
@@ -109,7 +134,7 @@ func feedVideoConsumer() {
 		nil,
 	)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
 	// 协程处理消费
 	go func() {
@@ -126,6 +151,7 @@ func feedVideoConsumer() {
 			failOnError[int](err, &rabbitMSG)
 		}
 	}()
+	return nil
 }
 
 // 消息补偿机制
@@ -136,57 +162,6 @@ func handleError[T any](msg *bo.RabbitMSG[T]) {
 	rabbitMSGS = append(rabbitMSGS, *msg)
 	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitMSGS)
 	failOnError[T](err, msg)
-}
-
-// rabbit服务器初始化
-func initRabbitServer() {
-	// 声明交换机
-	err := initExchange(config.Config.Rabbit.Exchange.ServiceExchange)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// 声明队列
-	err = initQueue(config.Config.Rabbit.Queue.FeedVideo)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// 声明队列
-	err = initQueue(config.Config.Rabbit.Queue.UploadVideo)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// 声明队列
-	err = initQueue(config.Config.Rabbit.Queue.ChangeFollowNum)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// 声明绑定
-	err = initBinding(
-		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.FeedVideo,
-		config.Config.Rabbit.Key.FeedVideo,
-	)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// 声明绑定
-	err = initBinding(
-		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.UploadVideo,
-		config.Config.Rabbit.Key.UploadVideo,
-	)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	// 声明绑定
-	err = initBinding(
-		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.ChangeFollowNum,
-		config.Config.Rabbit.Key.ChangeFollowNum,
-	)
-	if err != nil {
-		log.Fatalln(err)
-	}
 }
 
 // 更改关注和粉丝数量

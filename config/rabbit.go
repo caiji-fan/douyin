@@ -12,7 +12,14 @@ type rabbit struct {
 		ChangeFollowNum string `yaml:"change-follow-num"`
 		UploadVideo     string `yaml:"upload-video"`
 		FeedVideo       string `yaml:"feed-video"`
+		DeadUploadVideo string `yaml:"dead-upload-video"`
+		DeadFeedVideo   string `yaml:"dead-feed-video"`
 	} `yaml:"queue"`
+
+	TTL struct {
+		UploadVideo int `yaml:"upload-video"`
+		FeedVideo   int `yaml:"feed-video"`
+	} `yaml:"ttl"`
 
 	Key struct {
 		ChangeFollowNum string `yaml:"change-follow-num"`
@@ -21,6 +28,7 @@ type rabbit struct {
 	} `yaml:"key"`
 
 	Exchange struct {
-		ServiceExchange string `yaml:"service-exchange"`
+		ServiceExchange     string `yaml:"service-exchange"`
+		DeadServiceExchange string `yaml:"dead-service-exchange"`
 	} `yaml:"exchange"`
 }

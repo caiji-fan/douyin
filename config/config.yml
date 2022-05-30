@@ -1,5 +1,7 @@
 # 应用服务配置
 server:
+  protocol: http
+  ip: 127.0.0.1
   # 端口号
   port: 8080
   # 服务上下文
@@ -24,9 +26,14 @@ rabbit:
   resend-max: 5
   # 连接url
   url: "amqp://douyin:douyin@localhost:5672/douyin"
+  # 消息超时时间
+  ttl:
+    upload-video: 10000
+    feed-video: 10000
   # 交换机名
   exchange:
     service-exchange: "dy_service"
+    dead-service-exchange: "dy_service_dead"
   # 队列名
   queue:
     # 修改用户的关注数和粉丝数
@@ -35,6 +42,10 @@ rabbit:
     upload-video: "upload_video"
     # 投放视频到用户feed流
     feed-video: "feed-video"
+    # 投放视频死信队列
+    dead-feed-video: "dead-feed-video"
+    # 上传视频死信队列
+    dead-upload-video: "dead-upload-video"
   # 路由键名
   key:
     # 修改用户的关注数和粉丝数
@@ -54,7 +65,7 @@ redis:
   # redis键名
   key:
     # 用户token
-    token: "token"
+    token: "token:"
     # 消息队列消息备份
     message-backup: "message_backup"
     # 消息队列错误消息
@@ -89,8 +100,8 @@ service:
   # 标识大v的粉丝数
   big-v-num: 1000000
   # 临时路径
-  video-temp-dir: "../../public/dy/video/"
-  cover-temp-dir: "../../public/dy/cover/"
+  video-temp-dir: "public/dy/video/"
+  cover-temp-dir: "public/dy/cover/"
   # 分页大小
   page-size: 10
 jwt:

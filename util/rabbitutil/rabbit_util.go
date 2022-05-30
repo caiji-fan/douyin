@@ -25,12 +25,7 @@ type ChangeFollowNumBody struct {
 // isFollow 			是否是关注请求
 func ChangeFollowNum(userId int, toUserId int, isFollow bool) error {
 	// 服务端声明
-	err := producerInit(
-		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.ChangeFollowNum,
-		config.Config.Rabbit.Key.ChangeFollowNum,
-	)
-	if err != nil {
+	if err := initChangeFollowNum(); err != nil {
 		return err
 	}
 	var body = ChangeFollowNumBody{UserId: userId, ToUserId: toUserId, IsFollow: isFollow}
@@ -45,13 +40,7 @@ func ChangeFollowNum(userId int, toUserId int, isFollow bool) error {
 // videoId 				视频id
 // filePath 			视频文件路径
 func UploadVideo(videoId int) error {
-	// 服务端声明
-	err := producerInit(
-		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.UploadVideo,
-		config.Config.Rabbit.Key.UploadVideo,
-	)
-	if err != nil {
+	if err := initUploadVideo(); err != nil {
 		return err
 	}
 	// 创建消息与管道
@@ -64,13 +53,7 @@ func UploadVideo(videoId int) error {
 // FeedVideo 			投放视频到用户feed流
 // videoId 				视频id
 func FeedVideo(videoId int) error {
-	// 声明服务端
-	err := producerInit(
-		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.FeedVideo,
-		config.Config.Rabbit.Key.FeedVideo,
-	)
-	if err != nil {
+	if err := initFeedVideo(); err != nil {
 		return err
 	}
 	// 创建消息与管道

@@ -26,12 +26,13 @@ func Init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = channel.Confirm(false)
-	if err != nil {
+	if err := channel.Confirm(false); err != nil {
 		log.Fatalln(err)
 	}
 	// 开始监听消费
-	initConsumer()
+	if err := initConsumer(); err != nil {
+		log.Fatalln(err)
+	}
 }
 
 // 声明交换机
@@ -44,8 +45,8 @@ func initExchange(exchange string) error {
 }
 
 // 声明队列
-func initQueue(queue string) error {
-	_, err := channel.QueueDeclare(queue, true, false, false, false, nil)
+func initQueue(queue string, args amqp.Table) error {
+	_, err := channel.QueueDeclare(queue, true, false, false, false, args)
 	if err != nil {
 		return err
 	}
@@ -61,15 +62,15 @@ func initBinding(exchange, queue, key string) error {
 	return nil
 }
 
-// 生产者发消息之前初始化队列和绑定
-func producerInit(exchange, queue, key string) error {
+// 声明整套消息路径
+func producerInit(exchange, queue, key string, args amqp.Table) error {
 	// 声明交换机
-	err := initExchange(config.Config.Rabbit.Exchange.ServiceExchange)
+	err := initExchange(exchange)
 	if err != nil {
 		return err
 	}
 	// 声明队列
-	err = initQueue(config.Config.Rabbit.Queue.FeedVideo)
+	err = initQueue(queue, args)
 	if err != nil {
 		return err
 	}
@@ -80,6 +81,72 @@ func producerInit(exchange, queue, key string) error {
 		key,
 	)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 初始化投放视频流消息队列
+func initFeedVideo() error {
+	if err := producerInit(
+		config.Config.Rabbit.Exchange.DeadServiceExchange,
+		config.Config.Rabbit.Queue.DeadFeedVideo,
+		config.Config.Rabbit.Key.FeedVideo,
+		nil,
+	); err != nil {
+		return err
+	}
+	// 声明服务端
+	if err := producerInit(
+		config.Config.Rabbit.Exchange.ServiceExchange,
+		config.Config.Rabbit.Queue.FeedVideo,
+		config.Config.Rabbit.Key.FeedVideo,
+		amqp.Table{
+			"x-message-ttl":             config.Config.Rabbit.TTL.FeedVideo,
+			"x-dead-letter-exchange":    config.Config.Rabbit.Exchange.DeadServiceExchange,
+			"x-dead-letter-routing-key": config.Config.Rabbit.Key.FeedVideo,
+		},
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+// 初始化上传视频消息队列
+func initUploadVideo() error {
+	if err := producerInit(
+		config.Config.Rabbit.Exchange.DeadServiceExchange,
+		config.Config.Rabbit.Queue.DeadUploadVideo,
+		config.Config.Rabbit.Key.UploadVideo,
+		nil,
+	); err != nil {
+		return err
+	}
+	// 声明服务端
+	if err := producerInit(
+		config.Config.Rabbit.Exchange.ServiceExchange,
+		config.Config.Rabbit.Queue.UploadVideo,
+		config.Config.Rabbit.Key.UploadVideo,
+		amqp.Table{
+			"x-message-ttl":             config.Config.Rabbit.TTL.UploadVideo,
+			"x-dead-letter-exchange":    config.Config.Rabbit.Exchange.DeadServiceExchange,
+			"x-dead-letter-routing-key": config.Config.Rabbit.Key.UploadVideo,
+		},
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+// 初始化修改关注数量的消息队列
+func initChangeFollowNum() error {
+	// 声明服务端
+	if err := producerInit(
+		config.Config.Rabbit.Exchange.ServiceExchange,
+		config.Config.Rabbit.Queue.ChangeFollowNum,
+		config.Config.Rabbit.Key.ChangeFollowNum,
+		nil,
+	); err != nil {
 		return err
 	}
 	return nil

@@ -80,15 +80,15 @@ func (v Video) QueryByConditionTimeDESC(condition *po.Video) (*[]po.Video, error
 	if condition.Title != "" {
 		db1 = db1.Where("name = ?", condition.Title)
 	}
-	err := db1.Order("update_time desc").Find(&videos).Error
+	err := db1.Order("create_time desc").Find(&videos).Error
 	return &videos, err
 }
 
 func (v Video) QueryByLatestTimeDESC(latestTime time.Time, size int) (*[]po.Video, error) {
 	db1 := db
 	var videos []po.Video
-	db1 = db1.Where("update_time < ?", latestTime)
-	err := db1.Order("update_time desc").Limit(size).Find(&videos).Error
+	db1 = db1.Where("create_time < ?", latestTime)
+	err := db1.Order("create_time desc").Limit(size).Find(&videos).Error
 	return &videos, err
 }
 
