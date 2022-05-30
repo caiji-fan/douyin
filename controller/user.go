@@ -18,7 +18,7 @@ func Register(context *gin.Context) {
 	var user param.User
 	err := context.ShouldBindQuery(&user)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, user))))
+		context.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, user))))
 		return
 	}
 	userId, token, err := serviceimpl.NewUserService().Register(user)
@@ -38,7 +38,7 @@ func Login(context *gin.Context) {
 	var user param.User
 	err := context.ShouldBindQuery(&user)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, user))))
+		context.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, user))))
 		return
 	}
 	userId, token, err := serviceimpl.NewUserService().Login(user)
@@ -58,7 +58,7 @@ func UserInfo(context *gin.Context) {
 	var userInfoParam param.UserInfo
 	err := context.ShouldBindQuery(&userInfoParam)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, userInfoParam))))
+		context.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, userInfoParam))))
 		return
 	}
 	user, err := serviceimpl.NewUserService().UserInfo(userInfoParam.UserId)

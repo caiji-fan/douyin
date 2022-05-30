@@ -36,3 +36,8 @@ func ErrorResponse(err error) Response {
 		return Response{Code: -1, Message: "系统维护中"}
 	}
 }
+
+// ArgumentError 参数错误
+func ArgumentError(err error) Response {
+	return Response{-1, err.Error()}
+}

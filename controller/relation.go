@@ -40,7 +40,7 @@ func FollowList(ctx *gin.Context) {
 	var followListParam param.FollowList
 	err := ctx.ShouldBindQuery(&followListParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, followListParam))))
+		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, followListParam))))
 		return
 	}
 	userList, err := relationService.FollowList(followListParam.UserID)
@@ -60,7 +60,7 @@ func FansList(ctx *gin.Context) {
 	var fansListParam param.FollowList
 	err := ctx.ShouldBindQuery(&fansListParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, fansListParam))))
+		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, fansListParam))))
 		return
 	}
 	userList, err := relationService.FansList(fansListParam.UserID)

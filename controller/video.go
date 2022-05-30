@@ -68,7 +68,7 @@ func Publish(ctx *gin.Context) {
 	var publishParam param.Publish
 	err = ctx.Bind(&publishParam)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, publishParam))))
+		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, publishParam))))
 		return
 	}
 
@@ -96,7 +96,7 @@ func VideoList(ctx *gin.Context) {
 	var videoList param.VideoList
 	err := ctx.ShouldBindQuery(&videoList)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoList))))
+		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, videoList))))
 		return
 	}
 

@@ -20,7 +20,7 @@ func Comment(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(&commentParam)
 	if err != nil {
 		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, commentParam))))
+		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, commentParam))))
 		return
 	}
 	err = serviceimpl.NewCommentServiceInstance().Comment(&commentParam)
@@ -38,7 +38,7 @@ func CommentList(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(&commentListParam)
 	if err != nil {
 		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, commentListParam))))
+		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, commentListParam))))
 		return
 	}
 	commentList, err := serviceimpl.NewCommentServiceInstance().CommentList(commentListParam.VideoId)
