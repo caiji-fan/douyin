@@ -13,8 +13,8 @@ func Init() {
 	// 建立连接
 	RedisDB = redis.NewClient(&redis.Options{
 		Addr:     config.Config.Redis.Url,
-		Password: "",
-		DB:       0,
+		Password: config.Config.Redis.Password,
+		DB:       config.Config.Redis.DB,
 	})
 	err := RedisDB.Ping().Err()
 	if err != nil {

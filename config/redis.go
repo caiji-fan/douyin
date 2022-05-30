@@ -4,7 +4,9 @@
 package config
 
 type redis struct {
-	Url string `yaml:"url"`
+	Url      string `yaml:"url"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
 
 	Key struct {
 		Token         string `yaml:"token"`

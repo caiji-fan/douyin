@@ -46,7 +46,11 @@ rabbit:
 # redis配置信息
 redis:
   # redis连接url
-  url: "124.70.69.180:6379"
+  url: "127.0.0.1:6379"
+  # 数据库
+  db: 0
+  # 密码
+  password: ""
   # redis键名
   key:
     # 用户token
