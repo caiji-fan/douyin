@@ -123,3 +123,15 @@ func getUUID() string {
 func ParseFileName(originName string) string {
 	return strings.ReplaceAll(getUUID(), "-", "") + strings.ToLower(originName[strings.LastIndex(originName, "."):])
 }
+
+// IsVideo 判断是否是时评
+func IsVideo(fileName string) bool {
+	var suffix = strings.ToLower(fileName[strings.LastIndex(fileName, "."):])
+	var videoSuffix = []string{".avi", ".mp4", ".rmvp"}
+	for _, v := range videoSuffix {
+		if v == suffix {
+			return true
+		}
+	}
+	return false
+}
