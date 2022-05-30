@@ -13,12 +13,6 @@ import (
 
 const MANDATORY = true
 
-type ChangeFollowNumBody struct {
-	UserId   int  `json:"user_id"`
-	ToUserId int  `json:"to_user_id"`
-	IsFollow bool `json:"is_follow"`
-}
-
 // ChangeFollowNum 		修改用户粉丝数和关注数
 // userId 				发起关注或取关的用户id
 // toUserId 			收到关注或取关的用户id
@@ -28,9 +22,9 @@ func ChangeFollowNum(userId int, toUserId int, isFollow bool) error {
 	if err := initChangeFollowNum(); err != nil {
 		return err
 	}
-	var body = ChangeFollowNumBody{UserId: userId, ToUserId: toUserId, IsFollow: isFollow}
+	var body = bo.ChangeFollowNumBody{UserId: userId, ToUserId: toUserId, IsFollow: isFollow}
 	// 创建消息与管道
-	rabbitMSG := bo.RabbitMSG[ChangeFollowNumBody]{Data: body, ResendCount: 0, Type: bo.CHANGE_FOLLOW_NUM}
+	rabbitMSG := bo.RabbitMSG[bo.ChangeFollowNumBody]{Data: body, ResendCount: 0, Type: bo.CHANGE_FOLLOW_NUM}
 	return Publish(&rabbitMSG,
 		config.Config.Rabbit.Exchange.ServiceExchange,
 		config.Config.Rabbit.Key.ChangeFollowNum)
@@ -64,7 +58,7 @@ func FeedVideo(videoId int) error {
 }
 
 // Publish 发布消息
-func Publish[T any](rabbitMSG *bo.RabbitMSG[T], exchange string, key string) error {
+func Publish[T bo.RabbitType](rabbitMSG *bo.RabbitMSG[T], exchange string, key string) error {
 	data, err := json.Marshal(rabbitMSG)
 	if err != nil {
 		return err

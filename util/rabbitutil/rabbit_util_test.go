@@ -5,8 +5,10 @@ package rabbitutil
 
 import (
 	"douyin/config"
+	"douyin/entity/bo"
 	"douyin/repositories/daoimpl"
 	"douyin/util/redisutil"
+	"errors"
 	"log"
 	"testing"
 )
@@ -44,7 +46,7 @@ func TestUploadVideo(t *testing.T) {
 // pass
 func TestDoChangeFollowNum(t *testing.T) {
 	daoimpl.Init()
-	err := doChangeFollowNum(&ChangeFollowNumBody{UserId: 1, ToUserId: 2, IsFollow: true})
+	err := doChangeFollowNum(&bo.ChangeFollowNumBody{UserId: 1, ToUserId: 2, IsFollow: true})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -68,4 +70,13 @@ func TestDoUploadVideo(t *testing.T) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func TestHandleError(t *testing.T) {
+	redisutil.Init()
+	var rabbitMSG = bo.RabbitMSG[int]{Data: 1, Type: bo.FEED_VIDEO, ResendCount: 0}
+	failOnErrorInt(errors.New("测试"), &rabbitMSG)
+
+	var rabbitMSG2 = bo.RabbitMSG[bo.ChangeFollowNumBody]{Data: bo.ChangeFollowNumBody{UserId: 1, ToUserId: 2, IsFollow: true}, ResendCount: 0}
+	failOnErrorChangeFollowNumBody(errors.New("测试"), &rabbitMSG2)
 }

@@ -10,10 +10,14 @@ const (
 )
 
 // RabbitMSG 消息队列标准消息体
-type RabbitMSG[T any] struct {
+type RabbitMSG[T RabbitType] struct {
 	Type byte `json:"type"`
 	// 消息体
 	Data T `json:"data"`
 	// 重发次数
 	ResendCount uint8 `json:"resend_count"`
+}
+
+type RabbitType interface {
+	int | ChangeFollowNumBody
 }

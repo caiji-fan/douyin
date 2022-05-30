@@ -64,15 +64,15 @@ func changeFollowNumConsumer() error {
 	// 协程处理消费
 	go func() {
 		for msg := range consume {
-			var rabbitMSG bo.RabbitMSG[ChangeFollowNumBody]
+			var rabbitMSG bo.RabbitMSG[bo.ChangeFollowNumBody]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
-			failOnError[ChangeFollowNumBody](err, &rabbitMSG)
+			failOnErrorChangeFollowNumBody(err, &rabbitMSG)
 			changeFollowNumBody := rabbitMSG.Data
 			err = doChangeFollowNum(&changeFollowNumBody)
-			failOnError[ChangeFollowNumBody](err, &rabbitMSG)
+			failOnErrorChangeFollowNumBody(err, &rabbitMSG)
 			err = msg.Ack(true)
-			failOnError[ChangeFollowNumBody](err, &rabbitMSG)
+			failOnErrorChangeFollowNumBody(err, &rabbitMSG)
 		}
 	}()
 	return nil
@@ -98,28 +98,17 @@ func uploadVideoConsumer() error {
 			var rabbitMSG bo.RabbitMSG[int]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
-			failOnError[int](err, &rabbitMSG)
+			failOnErrorInt(err, &rabbitMSG)
 			//查询video数据
 			videoId := rabbitMSG.Data
 			err = doUploadVideo(videoId)
-			failOnError[int](err, &rabbitMSG)
+			failOnErrorInt(err, &rabbitMSG)
 			// 确认收到消息
 			err = msg.Ack(true)
-			failOnError[int](err, &rabbitMSG)
+			failOnErrorInt(err, &rabbitMSG)
 		}
 	}()
 	return nil
-}
-
-//错误处理
-func failOnError[T any](err error, rabbitMSG *bo.RabbitMSG[T]) {
-	if err != nil {
-		if int(rabbitMSG.ResendCount) > config.Config.Rabbit.ResendMax {
-			// todo 报警
-		}
-		handleError[T](rabbitMSG)
-		log.Println(err)
-	}
 }
 
 // 投放视频流消费
@@ -142,30 +131,70 @@ func feedVideoConsumer() error {
 			var rabbitMSG bo.RabbitMSG[int]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
-			failOnError[int](err, &rabbitMSG)
+			failOnErrorInt(err, &rabbitMSG)
 			//查询video数据
 			videoId := rabbitMSG.Data
 			err = doFeedVideo(videoId)
-			failOnError[int](err, &rabbitMSG)
+			failOnErrorInt(err, &rabbitMSG)
 			err = msg.Ack(true)
-			failOnError[int](err, &rabbitMSG)
+			failOnErrorInt(err, &rabbitMSG)
 		}
 	}()
 	return nil
 }
 
 // 消息补偿机制
-func handleError[T any](msg *bo.RabbitMSG[T]) {
-	var rabbitMSGS = make([]bo.RabbitMSG[T], 0)
-	err := redisutil.Get[[]bo.RabbitMSG[T]](config.Config.Redis.Key.ErrorMessage, &rabbitMSGS)
-	failOnError[T](err, msg)
-	rabbitMSGS = append(rabbitMSGS, *msg)
-	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitMSGS)
-	failOnError[T](err, msg)
+func failOnErrorInt(err error, msg *bo.RabbitMSG[int]) {
+	if err != nil {
+		msg.ResendCount++
+		if int(msg.ResendCount) > config.Config.Rabbit.ResendMax {
+			// todo 报警
+		}
+		handleErrorInt(msg)
+		log.Println(err)
+	}
+}
+
+// 消息补偿机制
+func failOnErrorChangeFollowNumBody(err error, msg *bo.RabbitMSG[bo.ChangeFollowNumBody]) {
+
+	if err != nil {
+		msg.ResendCount++
+		if int(msg.ResendCount) > config.Config.Rabbit.ResendMax {
+			// todo 报警
+		}
+		handleErrorChangeFollowNumBody(msg)
+		log.Println(err)
+	}
+}
+
+// 存储消息补偿信息
+func handleErrorInt(msg *bo.RabbitMSG[int]) {
+	var rabbitErrorMSG bo.RabbitErrorMSG
+	err := redisutil.Get[bo.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
+	failOnErrorInt(err, msg)
+	switch msg.Type {
+	case bo.FEED_VIDEO:
+		rabbitErrorMSG.FeedVideo = append(rabbitErrorMSG.FeedVideo, *msg)
+	case bo.UPLOAD_VIDEO:
+		rabbitErrorMSG.UploadVideo = append(rabbitErrorMSG.UploadVideo, *msg)
+	}
+	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
+	failOnErrorInt(err, msg)
+}
+
+// 存储消息补偿信息
+func handleErrorChangeFollowNumBody(msg *bo.RabbitMSG[bo.ChangeFollowNumBody]) {
+	var rabbitErrorMSG bo.RabbitErrorMSG
+	err := redisutil.Get[bo.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
+	failOnErrorChangeFollowNumBody(err, msg)
+	rabbitErrorMSG.ChangeFollowNum = append(rabbitErrorMSG.ChangeFollowNum, *msg)
+	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
+	failOnErrorChangeFollowNumBody(err, msg)
 }
 
 // 更改关注和粉丝数量
-func doChangeFollowNum(body *ChangeFollowNumBody) error {
+func doChangeFollowNum(body *bo.ChangeFollowNumBody) error {
 	var err error
 	tx := daoimpl.NewUserDaoInstance().Begin()
 	var difference int

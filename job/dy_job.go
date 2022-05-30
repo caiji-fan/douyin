@@ -11,6 +11,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -94,38 +95,67 @@ func clearOutBox() {
 
 // 处理错误消息
 func handleErrorMSG() {
-	var msgS = make([]bo.RabbitMSG[interface{}], 0)
-	err := redisutil.GetAndDelete[[]bo.RabbitMSG[interface{}]](config.Config.Redis.Key.ErrorMessage, &msgS)
+	p := redisutil.Begin()
+	var msgS bo.RabbitErrorMSG
+	err := redisutil.GetAndDelete[bo.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &msgS, true, p)
+	if err != nil {
+		log.Println(err)
+		err := p.Discard()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		return
+	}
+	for _, msg := range msgS.ChangeFollowNum {
+		err := rabbitutil.Publish[bo.ChangeFollowNumBody](&msg,
+			config.Config.Rabbit.Exchange.ServiceExchange,
+			config.Config.Rabbit.Key.ChangeFollowNum,
+		)
+		if err != nil {
+			log.Println(err)
+			err := p.Discard()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			return
+		}
+	}
+	for _, msg := range msgS.FeedVideo {
+		err := rabbitutil.Publish[int](&msg,
+			config.Config.Rabbit.Exchange.ServiceExchange,
+			config.Config.Rabbit.Key.FeedVideo)
+		if err != nil {
+			log.Println(err)
+			err := p.Discard()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			return
+		}
+	}
+	for _, msg := range msgS.UploadVideo {
+		err := rabbitutil.Publish[int](&msg,
+			config.Config.Rabbit.Exchange.ServiceExchange,
+			config.Config.Rabbit.Key.UploadVideo)
+		if err != nil {
+			log.Println(err)
+			err := p.Discard()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			return
+		}
+	}
+	_, err = p.Exec()
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	for _, msg := range msgS {
-		switch msg.Type {
-		case bo.FEED_VIDEO:
-			err := rabbitutil.Publish[int](&bo.RabbitMSG[int]{Type: msg.Type, Data: msg.Data.(int), ResendCount: msg.ResendCount},
-				config.Config.Rabbit.Exchange.ServiceExchange,
-				config.Config.Rabbit.Key.FeedVideo)
-			if err != nil {
-				log.Println(err)
-			}
-		case bo.UPLOAD_VIDEO:
-			err := rabbitutil.Publish[int](&bo.RabbitMSG[int]{Type: msg.Type, Data: msg.Data.(int), ResendCount: msg.ResendCount},
-				config.Config.Rabbit.Exchange.ServiceExchange,
-				config.Config.Rabbit.Key.UploadVideo)
-			if err != nil {
-				log.Println(err)
-			}
-		case bo.CHANGE_FOLLOW_NUM:
-			err := rabbitutil.Publish[rabbitutil.ChangeFollowNumBody](
-				&bo.RabbitMSG[rabbitutil.ChangeFollowNumBody]{Type: msg.Type, Data: msg.Data.(rabbitutil.ChangeFollowNumBody), ResendCount: msg.ResendCount},
-				config.Config.Rabbit.Exchange.ServiceExchange,
-				config.Config.Rabbit.Key.ChangeFollowNum)
-			if err != nil {
-				log.Println(err)
-			}
-		}
-	}
+
 }
 
 // 清理本地临时存储的视频
@@ -133,10 +163,18 @@ func clearLocalVideo() {
 	// 获得两周前的日期
 	now := time.Now().AddDate(0, 0, -14).Format(config.Config.StandardDate)
 	// 拼接两周前的视频和文件路径
-	videoPath := config.Config.Service.VideoTempDir + now
-	coverPath := config.Config.Service.CoverTempDir + now
+	videoPath, err := filepath.Abs(filepath.Join(config.Config.Service.VideoTempDir, now))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	coverPath, err := filepath.Abs(filepath.Join(config.Config.Service.CoverTempDir, now))
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	// 判断视频路径是否存在并删除
-	_, err := os.Stat(videoPath)
+	_, err = os.Stat(videoPath)
 	if err != nil {
 		log.Println(err)
 		return
