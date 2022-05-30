@@ -4,6 +4,8 @@
 package config
 
 type server struct {
-	Port int    `yaml:"port"`
-	Name string `yaml:"name"`
+	Port     string `yaml:"port"`
+	Name     string `yaml:"name"`
+	Protocol string `yaml:"protocol"`
+	IP       string `yaml:"ip"`
 }

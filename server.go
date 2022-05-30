@@ -14,13 +14,12 @@ import (
 	"douyin/util/redisutil"
 	"github.com/gin-gonic/gin"
 	"log"
-	"strconv"
 )
 
 var route *gin.Engine
 
 func main() {
-	err := route.Run(":" + strconv.Itoa(config.Config.Server.Port))
+	err := route.Run(":" + config.Config.Server.Port)
 	if err != nil {
 		log.Fatalln(err)
 	}

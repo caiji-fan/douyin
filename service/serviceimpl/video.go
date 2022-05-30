@@ -132,8 +132,8 @@ func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, userId int, 
 	var videoDB = daoimpl.NewVideoDaoInstance()
 	var tx = videoDB.Begin()
 	videoPo := po.Video{
-		PlayUrl:       videoSaveFile,
-		CoverUrl:      coverSaveFile,
+		PlayUrl:       config.Config.Server.Protocol + "://" + config.Config.Server.IP + config.Config.Server.Port + "/" + videoSaveFile,
+		CoverUrl:      config.Config.Server.Protocol + "://" + config.Config.Server.IP + config.Config.Server.Port + "/" + coverSaveFile,
 		FavoriteCount: 0,
 		CommentCount:  0,
 		AuthorId:      userId,
