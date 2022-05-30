@@ -237,7 +237,7 @@ func doFeedVideo(videoId int) error {
 		return err
 	}
 	// 取得需要存入redis的value
-	var value = []redis.Z{{Score: float64(video.CreateTime.UnixMilli()), Member: video}}
+	var value = []redis.Z{{Score: float64(video.CreateTime.UnixMilli()), Member: bo.Feed{VideoId: videoId, CreateTime: video.CreateTime}}}
 	//大v用户
 	if sender.FollowerCount >= config.Config.Service.BigVNum {
 		err = redisutil.ZAddWithExpireTime(config.Config.Redis.Key.Outbox+strconv.Itoa(sender.ID),
