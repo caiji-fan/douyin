@@ -15,6 +15,7 @@ func InitRoute() *gin.Engine {
 	route := gin.Default()
 
 	withAUTH := route.Group(config.Config.Server.Name, middleware.JWTAuth, middleware.SaveUserId)
+	withAUTH.GET("/feed", controller.Feed)
 	user1 := withAUTH.Group("/user")
 	{
 		user1.GET("/", controller.UserInfo)
@@ -42,7 +43,6 @@ func InitRoute() *gin.Engine {
 	}
 
 	withoutAUTH := route.Group(config.Config.Server.Name)
-	withoutAUTH.GET("/feed", controller.Feed)
 	user2 := withoutAUTH.Group("/user")
 	{
 		user2.POST("/register/", controller.Register)

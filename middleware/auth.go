@@ -24,10 +24,18 @@ func JWTAuth(ctx *gin.Context) {
 	var userId int
 	//判断投稿接口
 	path := ctx.Request.URL.Path
-	flag := strings.Contains(path, "/douyin/publish/action")
-	if flag {
+	isFeed := strings.Contains(path, "/douyin/feed")
+	isPublish := strings.Contains(path, "/douyin/publish/action")
+	if isPublish {
 		//投稿接口 通过form-data获取token
 		tokenString = ctx.PostForm("token")
+	} else if isFeed {
+		// feed流接口，只用获取token，且没有token不拦截
+		tokenString = ctx.Query("token")
+		if tokenString == "" {
+			ctx.Next()
+			return
+		}
 	} else {
 		//获取参数userId
 		userId, err = getUserId(ctx)
@@ -51,15 +59,15 @@ func JWTAuth(ctx *gin.Context) {
 		log.Println(err)
 		return
 	}
-	//对比两个id是否一致 (投稿接口不需要此判断)
-	if !flag {
+	//对比两个id是否一致 (投稿与Feed流接口不需要此判断)
+	if !(isPublish || isFeed) {
 		err = equalId(ctx, userId, uid)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 	}
-	//投稿接口存入uid，供线程变量中间件操作
+	//存入uid，供线程变量中间件操作
 	ctx.Set(config.Config.ThreadLocal.Keys.UserId, uid)
 	//继续执行下面的程序
 	ctx.Next()
