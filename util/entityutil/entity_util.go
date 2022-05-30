@@ -10,6 +10,7 @@ import (
 	"douyin/entity/po"
 	"douyin/middleware"
 	"douyin/repositories/daoimpl"
+	"fmt"
 	"strconv"
 )
 
@@ -84,21 +85,28 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 	if err != nil {
 		return err
 	}
-	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId) //uid为当前登录用户id
-	if err != nil {
-		return err
+	var isLogin bool = true
+	var favoriteVideoIdMap map[int]int
+	//todo暂改
+	if middleware.ThreadLocal.Get() == nil { //未登录状态
+		isLogin = false
+	} else { //已登陆状态
+		userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+		uid, err := strconv.Atoi(userId) //uid为当前登录用户id
+		if err != nil {
+			return err
+		}
+		//todo单元测试暂改
+		//uid := 1 //单元测试用
+		favoriteVideoId, err := daoimpl.NewFavoriteDaoInstance().QueryVideoIdsByUserId(uid)
+		if err != nil {
+			return err
+		}
+		favoriteVideoIdMap = make(map[int]int, len(favoriteVideoId))
+		for _, videoId := range favoriteVideoId {
+			favoriteVideoIdMap[videoId] = uid
+		} //key=视频id(当前登录用户喜欢的所有视频),value=当前登录用户id
 	}
-	//todo单元测试暂改
-	//uid := 5 //单元测试用
-	favoriteVideoId, err := daoimpl.NewFavoriteDaoInstance().QueryVideoIdsByUserId(uid)
-	if err != nil {
-		return err
-	}
-	var favoriteVideoIdMap = make(map[int]int, len(favoriteVideoId))
-	for _, videoId := range favoriteVideoId {
-		favoriteVideoIdMap[videoId] = uid
-	} //key=视频id(当前登录用户喜欢的所有视频),value=当前登录用户id
 	var i = 0
 	for _, userPo := range *userList {
 		videos := videosMap[userPo.ID]
@@ -119,8 +127,12 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 				CommentCount:  video.CommentCount,
 				Title:         video.Title,
 			}
-			_, boool := favoriteVideoIdMap[video.ID]
-			videoBo.IsFavorite = boool
+			if isLogin {
+				_, boool := favoriteVideoIdMap[video.ID]
+				videoBo.IsFavorite = boool
+			} else {
+				videoBo.IsFavorite = false
+			}
 			(*dest)[i] = videoBo
 			i++
 		}
@@ -167,25 +179,31 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 // dest				用户BO
 func GetUserBO(src *po.User, dest *bo.User) error {
 	//先处理isFollow
-	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId)
-	if err != nil {
-		return err
-	}
-	//todo单元测试暂改
-	//uid := 111//单元测试用
-	var poFollow = po.Follow{
-		FollowId:   (*src).ID,
-		FollowerId: uid,
-	}
-	poFollows, err := daoimpl.NewRelationDaoInstance().QueryByCondition(&poFollow)
-	if err != nil {
-		return err
-	}
-	if len(*poFollows) == 0 {
-		(*dest).IsFollow = false
-	} else {
-		(*dest).IsFollow = true
+	//todo暂改
+	if middleware.ThreadLocal.Get() == nil { //判断是否登录
+		(*dest).IsFollow = false //未登录直接false
+	} else { //登录再查询判断
+		userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
+		fmt.Println(userId)
+		uid, err := strconv.Atoi(userId)
+		if err != nil {
+			return err
+		}
+		//todo单元测试暂改
+		//uid := 1 //单元测试用
+		var poFollow = po.Follow{
+			FollowId:   (*src).ID,
+			FollowerId: uid,
+		}
+		poFollows, err := daoimpl.NewRelationDaoInstance().QueryByCondition(&poFollow)
+		if err != nil {
+			return err
+		}
+		if len(*poFollows) == 0 {
+			(*dest).IsFollow = false
+		} else {
+			(*dest).IsFollow = true
+		}
 	}
 	//再处理其他简单的处理
 	dest.ID = src.ID
