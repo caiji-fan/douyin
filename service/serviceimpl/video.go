@@ -101,7 +101,12 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 		// 提交事务
 		tx.Commit()
 	}
-	return videoBOS, videos[len(videos)-1].CreateTime.UnixMilli(), nil
+	// 获得下一次请求的时间
+	nextTime := latestTime
+	if len(videos) > 1 {
+		nextTime = videos[len(videos)-1].CreateTime.UnixMilli()
+	}
+	return videoBOS, nextTime, nil
 }
 
 // Publish check token then save upload file to public directory
@@ -314,15 +319,19 @@ func mergeFeeds(feed1 *[]bo.Feed, feed2 *[]bo.Feed) ([]bo.Feed, error) {
 // 清理收件箱，用户查看一次收件箱后，将收件箱中已经查看过的视频清除
 // trash 已经查看过的feed对象
 func clearInbox(trash *[]bo.Feed, userId int) (*gorm.DB, error) {
+	var err error
 	// 清理数据库中的数据
 	tx := daoimpl.NewFeedDaoInstance().Begin()
 	var trashPOS = make([]po.Feed, len(*trash))
 	for i, v := range *trash {
 		trashPOS[i] = po.Feed{VideoId: v.VideoId, UserId: userId}
 	}
-	err := daoimpl.NewFeedDaoInstance().DeleteByCondition(&trashPOS, tx, true)
-	if err != nil {
-		return tx, err
+	// 如果存在需要删除的feed，则进入数据库进行删除
+	if len(*trash) > 0 {
+		err = daoimpl.NewFeedDaoInstance().DeleteByCondition(&trashPOS, tx, true)
+		if err != nil {
+			return tx, err
+		}
 	}
 	// 刷新收件箱的过期时间
 	err = redisutil.Expire(config.Config.Redis.Key.Inbox+strconv.Itoa(userId), config.InboxExpireTime)
