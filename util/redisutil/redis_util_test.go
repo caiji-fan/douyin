@@ -73,7 +73,7 @@ func TestGet(t *testing.T) {
 // pass
 func TestGetAndDelete(t *testing.T) {
 	var val TestRedis
-	err := GetAndDelete[TestRedis]("test", &val)
+	err := GetAndDelete[TestRedis]("test", &val, false, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -109,6 +109,16 @@ func TestZAdd(t *testing.T) {
 	value[0] = redis.Z{Score: 1, Member: TestRedis2{Value: "123", Date: time1}}
 	value[1] = redis.Z{Score: 1, Member: TestRedis2{Value: "456", Date: time2}}
 	err := ZAdd("test", value, false, nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func TestZAdd2(t *testing.T) {
+	var value = make([]redis.Z, 2)
+	value[0] = redis.Z{Score: 1, Member: bo.Feed{VideoId: 1, CreateTime: time.Now().AddDate(0, 0, -5)}}
+	value[1] = redis.Z{Score: 2, Member: bo.Feed{VideoId: 2, CreateTime: time.Now().AddDate(0, 0, -15)}}
+	err := ZAdd(config.Config.Redis.Key.Outbox+"2", value, false, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -163,12 +173,4 @@ func TestKeys(t *testing.T) {
 func TestBegin(t *testing.T) {
 	p := Begin()
 	fmt.Println(p)
-}
-
-func TestLock(t *testing.T) {
-
-}
-
-func TestUnlock(t *testing.T) {
-
 }

@@ -55,7 +55,7 @@ func Get[T any](key string, value *T) error {
 // GetAndDelete					获取string并删除string类型
 // key							键
 // value						值
-func GetAndDelete[T any](key string, value *T) error {
+func GetAndDelete[T any](key string, value *T, isTx bool, p redis.Pipeliner) error {
 	// Get
 	v, err := RedisDB.Get(key).Result()
 	if err == redis.Nil {
@@ -67,12 +67,22 @@ func GetAndDelete[T any](key string, value *T) error {
 	if err != nil {
 		return err
 	}
-	// Delete
-	_, err = RedisDB.Del(key).Result()
-	if err == redis.Nil {
-		return nil
-	} else if err != nil {
-		return err
+	if isTx {
+		// Delete
+		_, err = p.Del(key).Result()
+		if err == redis.Nil {
+			return nil
+		} else if err != nil {
+			return err
+		}
+	} else {
+		// Delete
+		_, err = RedisDB.Del(key).Result()
+		if err == redis.Nil {
+			return nil
+		} else if err != nil {
+			return err
+		}
 	}
 	return nil
 }
