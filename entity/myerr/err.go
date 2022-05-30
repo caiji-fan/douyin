@@ -12,6 +12,7 @@ var (
 	InvalidToken  = errors.New("用户凭证无效")
 	NoPermission  = errors.New("无权限")
 	LoginError    = errors.New("用户名或密码错误")
+	FileError     = errors.New("文件格式错误")
 )
 
 // ArgumentInvalid 参数无效
