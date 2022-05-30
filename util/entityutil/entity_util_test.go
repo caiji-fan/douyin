@@ -92,7 +92,7 @@ func TestGetUserBOS(t *testing.T) {
 }
 func TestGetUserBO(t *testing.T) {
 	src := po.User{
-		po.EntityModel{77, time.Now(), time.Now()}, "李文静", "siw", 99, 90}
+		po.EntityModel{1, time.Now(), time.Now()}, "李文静", "siw", 99, 90}
 	var dest bo.User
 	GetUserBO(&src, &dest)
 	fmt.Println(dest)
@@ -101,10 +101,10 @@ func TestGetVideoBOS(t *testing.T) {
 	var videos []po.Video = []po.Video{
 		{po.EntityModel{1, time.Now(), time.Now()}, "xxx.com", "sddl.cn", 666, 0, 1, "xx"},
 		{po.EntityModel{2, time.Now(), time.Now()}, "x1x.com", "s5l.cn", 0, 0, 2, "xx"},
-		{po.EntityModel{3, time.Now(), time.Now()}, "x2x.com", "sd34l.cn", 0, 0, 2, "xx"},
+		{po.EntityModel{3, time.Now(), time.Now()}, "x2x.com", "sd34l.cn", 0, 0, 6, "xx"},
 		{po.EntityModel{5, time.Now(), time.Now()}, "x3x.com", "s45l.cn", 666, 0, 2, "xx"},
 		{po.EntityModel{7, time.Now(), time.Now()}, "x4x.com", "s7dl.cn", 0, 0, 1, "xx"},
-		{po.EntityModel{8, time.Now(), time.Now()}, "x5x.com", "sd56l.cn", 0, 0, 1, "xx"},
+		{po.EntityModel{8, time.Now(), time.Now()}, "x5x.com", "sd56l.cn", 0, 0, 4, "xx"},
 	}
 	var dest []bo.Video = make([]bo.Video, len(videos))
 	GetVideoBOS(&videos, &dest)
