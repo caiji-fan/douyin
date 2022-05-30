@@ -10,6 +10,7 @@ import (
 	"douyin/entity/response"
 	"douyin/middleware"
 	"douyin/service/serviceimpl"
+	"douyin/util/obsutil"
 	"douyin/util/webutil"
 	"net/http"
 	"strconv"
@@ -78,7 +79,9 @@ func Publish(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.VideoNotFound))
 		return
 	}
-
+	if !obsutil.IsVideo(video.Filename) {
+		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.FileError))
+	}
 	// 发布
 	err = serviceimpl.NewVideoServiceInstance().Publish(ctx, video, authorId, publishParam.Title)
 	if err != nil {
