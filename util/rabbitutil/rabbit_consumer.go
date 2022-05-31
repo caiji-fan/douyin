@@ -14,6 +14,7 @@ import (
 	"github.com/go-redis/redis"
 	"log"
 	"strconv"
+	"strings"
 )
 
 // 初始化consumer
@@ -157,7 +158,6 @@ func failOnErrorInt(err error, msg *bo.RabbitMSG[int]) {
 
 // 消息补偿机制
 func failOnErrorChangeFollowNumBody(err error, msg *bo.RabbitMSG[bo.ChangeFollowNumBody]) {
-
 	if err != nil {
 		msg.ResendCount++
 		if int(msg.ResendCount) > config.Config.Rabbit.ResendMax {
@@ -229,14 +229,23 @@ func doUploadVideo(videoId int) error {
 	if video.ID == 0 {
 		return nil
 	}
+	var playUrl string
+	var coverUrl string
+	if config.Config.Server.WithProxy {
+		playUrl = video.PlayUrl[strings.Index(video.PlayUrl, config.Config.Server.Proxy)+len(config.Config.Server.Proxy)+1:]
+		coverUrl = video.CoverUrl[strings.Index(video.CoverUrl, config.Config.Server.Proxy)+len(config.Config.Server.Proxy)+1:]
+	} else {
+		playUrl = video.PlayUrl[strings.Index(video.PlayUrl, config.Config.Server.Port)+len(config.Config.Server.Port)+1:]
+		coverUrl = video.CoverUrl[strings.Index(video.PlayUrl, config.Config.Server.Port)+len(config.Config.Server.Port)+1:]
+	}
 	//上传视频
-	videoUrl, err := obsutil.Upload(video.PlayUrl, config.Config.Obs.Buckets.Video)
-	video.PlayUrl = videoUrl
+	playUrl, err = obsutil.Upload(playUrl, config.Config.Obs.Buckets.Video)
+	video.PlayUrl = playUrl
 	if err != nil {
 		return err
 	}
 	// 上传封面
-	coverUrl, err := obsutil.Upload(video.CoverUrl, config.Config.Obs.Buckets.Cover)
+	coverUrl, err = obsutil.Upload(coverUrl, config.Config.Obs.Buckets.Cover)
 	if err != nil {
 		return err
 	}

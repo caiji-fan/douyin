@@ -2,6 +2,10 @@
 server:
   protocol: http
   ip: 127.0.0.1
+  # 内网穿透代理
+  proxy: 502k09j523.qicp.vip
+  # 是否使用了代理
+  with-proxy: true
   # 端口号
   port: 8080
   # 服务上下文

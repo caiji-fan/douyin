@@ -131,9 +131,15 @@ func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, userId int, 
 	// 数据入库
 	var videoDB = daoimpl.NewVideoDaoInstance()
 	var tx = videoDB.Begin()
+	var playUrl string
+	var coverUrl string
+	if config.Config.Server.WithProxy {
+		playUrl = config.Config.Server.Protocol + "://" + config.Config.Server.Proxy + "/" + videoSaveFile
+		coverUrl = config.Config.Server.Protocol + "://" + config.Config.Server.Proxy + "/" + coverSaveFile
+	}
 	videoPo := po.Video{
-		PlayUrl:       config.Config.Server.Protocol + "://" + config.Config.Server.IP + config.Config.Server.Port + "/" + videoSaveFile,
-		CoverUrl:      config.Config.Server.Protocol + "://" + config.Config.Server.IP + config.Config.Server.Port + "/" + coverSaveFile,
+		PlayUrl:       playUrl,
+		CoverUrl:      coverUrl,
 		FavoriteCount: 0,
 		CommentCount:  0,
 		AuthorId:      userId,
