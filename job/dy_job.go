@@ -6,6 +6,7 @@ package job
 import (
 	"douyin/config"
 	"douyin/entity/bo"
+	"douyin/entity/rabbitentity"
 	"douyin/util/rabbitutil"
 	"douyin/util/redisutil"
 	"github.com/robfig/cron/v3"
@@ -95,9 +96,12 @@ func clearOutBox() {
 
 // 处理错误消息
 func handleErrorMSG() {
+	// 利用信道加锁
+	rabbitentity.ErrorMsgLockChan <- 1
 	p := redisutil.Begin()
-	var msgS bo.RabbitErrorMSG
-	err := redisutil.GetAndDelete[bo.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &msgS, true, p)
+	var msgS rabbitentity.RabbitErrorMSG
+	err := redisutil.GetAndDelete[rabbitentity.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &msgS, true, p)
+	<-rabbitentity.ErrorMsgLockChan
 	if err != nil {
 		log.Println(err)
 		err := p.Discard()
@@ -108,7 +112,7 @@ func handleErrorMSG() {
 		return
 	}
 	for _, msg := range msgS.ChangeFollowNum {
-		err := rabbitutil.Publish[bo.ChangeFollowNumBody](&msg,
+		err := rabbitutil.Publish[rabbitentity.ChangeFollowNumBody](&msg,
 			config.Config.Rabbit.Exchange.ServiceExchange,
 			config.Config.Rabbit.Key.ChangeFollowNum,
 		)

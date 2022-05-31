@@ -7,6 +7,7 @@ import (
 	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/po"
+	"douyin/entity/rabbitentity"
 	"douyin/repositories/daoimpl"
 	"douyin/util/obsutil"
 	"douyin/util/redisutil"
@@ -65,7 +66,7 @@ func changeFollowNumConsumer() error {
 	// 协程处理消费
 	go func() {
 		for msg := range consume {
-			var rabbitMSG bo.RabbitMSG[bo.ChangeFollowNumBody]
+			var rabbitMSG rabbitentity.RabbitMSG[rabbitentity.ChangeFollowNumBody]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
 			failOnErrorChangeFollowNumBody(err, &rabbitMSG)
@@ -96,7 +97,7 @@ func uploadVideoConsumer() error {
 	// 协程处理消费
 	go func() {
 		for msg := range consume {
-			var rabbitMSG bo.RabbitMSG[int]
+			var rabbitMSG rabbitentity.RabbitMSG[int]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
 			failOnErrorInt(err, &rabbitMSG)
@@ -129,7 +130,7 @@ func feedVideoConsumer() error {
 	// 协程处理消费
 	go func() {
 		for msg := range consume {
-			var rabbitMSG bo.RabbitMSG[int]
+			var rabbitMSG rabbitentity.RabbitMSG[int]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
 			failOnErrorInt(err, &rabbitMSG)
@@ -145,7 +146,7 @@ func feedVideoConsumer() error {
 }
 
 // 消息补偿机制
-func failOnErrorInt(err error, msg *bo.RabbitMSG[int]) {
+func failOnErrorInt(err error, msg *rabbitentity.RabbitMSG[int]) {
 	if err != nil {
 		msg.ResendCount++
 		if int(msg.ResendCount) > config.Config.Rabbit.ResendMax {
@@ -157,7 +158,7 @@ func failOnErrorInt(err error, msg *bo.RabbitMSG[int]) {
 }
 
 // 消息补偿机制
-func failOnErrorChangeFollowNumBody(err error, msg *bo.RabbitMSG[bo.ChangeFollowNumBody]) {
+func failOnErrorChangeFollowNumBody(err error, msg *rabbitentity.RabbitMSG[rabbitentity.ChangeFollowNumBody]) {
 	if err != nil {
 		msg.ResendCount++
 		if int(msg.ResendCount) > config.Config.Rabbit.ResendMax {
@@ -169,32 +170,54 @@ func failOnErrorChangeFollowNumBody(err error, msg *bo.RabbitMSG[bo.ChangeFollow
 }
 
 // 存储消息补偿信息
-func handleErrorInt(msg *bo.RabbitMSG[int]) {
-	var rabbitErrorMSG bo.RabbitErrorMSG
-	err := redisutil.Get[bo.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
-	failOnErrorInt(err, msg)
+func handleErrorInt(msg *rabbitentity.RabbitMSG[int]) {
+	// 利用信道加锁
+	rabbitentity.ErrorMsgLockChan <- 1
+	var rabbitErrorMSG rabbitentity.RabbitErrorMSG
+	err := redisutil.Get[rabbitentity.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
+	if err != nil {
+		log.Println(err)
+		<-rabbitentity.ErrorMsgLockChan
+		return
+	}
 	switch msg.Type {
-	case bo.FEED_VIDEO:
+	case rabbitentity.FEED_VIDEO:
 		rabbitErrorMSG.FeedVideo = append(rabbitErrorMSG.FeedVideo, *msg)
-	case bo.UPLOAD_VIDEO:
+	case rabbitentity.UPLOAD_VIDEO:
 		rabbitErrorMSG.UploadVideo = append(rabbitErrorMSG.UploadVideo, *msg)
 	}
 	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
-	failOnErrorInt(err, msg)
+	if err != nil {
+		log.Println(err)
+		<-rabbitentity.ErrorMsgLockChan
+		return
+	}
+	<-rabbitentity.ErrorMsgLockChan
 }
 
 // 存储消息补偿信息
-func handleErrorChangeFollowNumBody(msg *bo.RabbitMSG[bo.ChangeFollowNumBody]) {
-	var rabbitErrorMSG bo.RabbitErrorMSG
-	err := redisutil.Get[bo.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
-	failOnErrorChangeFollowNumBody(err, msg)
+func handleErrorChangeFollowNumBody(msg *rabbitentity.RabbitMSG[rabbitentity.ChangeFollowNumBody]) {
+	// 利用信道加锁
+	rabbitentity.ErrorMsgLockChan <- 1
+	var rabbitErrorMSG rabbitentity.RabbitErrorMSG
+	err := redisutil.Get[rabbitentity.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
+	if err != nil {
+		log.Println(err)
+		<-rabbitentity.ErrorMsgLockChan
+		return
+	}
 	rabbitErrorMSG.ChangeFollowNum = append(rabbitErrorMSG.ChangeFollowNum, *msg)
 	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
-	failOnErrorChangeFollowNumBody(err, msg)
+	if err != nil {
+		log.Println(err)
+		<-rabbitentity.ErrorMsgLockChan
+		return
+	}
+	<-rabbitentity.ErrorMsgLockChan
 }
 
 // 更改关注和粉丝数量
-func doChangeFollowNum(body *bo.ChangeFollowNumBody) error {
+func doChangeFollowNum(body *rabbitentity.ChangeFollowNumBody) error {
 	var err error
 	tx := daoimpl.NewUserDaoInstance().Begin()
 	var difference int

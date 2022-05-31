@@ -1,7 +1,7 @@
-// Package bo
+// Package rabbitentity
 // @Author shaofan
 // @Date 2022/5/14
-package bo
+package rabbitentity
 
 const (
 	CHANGE_FOLLOW_NUM = '1'

@@ -19,7 +19,7 @@ var (
 type config struct {
 	DB           database    `yaml:"database"`
 	Redis        redis       `yaml:"redis"`
-	Rabbit       rabbit      `yaml:"rabbit"`
+	Rabbit       rabbit      `yaml:"rabbitentity"`
 	Server       server      `yaml:"server"`
 	Obs          obs         `yaml:"obs"`
 	Service      service     `yaml:"service"`

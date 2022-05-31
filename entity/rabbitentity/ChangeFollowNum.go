@@ -1,7 +1,7 @@
 // Package bo
 // @Author shaofan
 // @Date 2022/5/31
-package bo
+package rabbitentity
 
 type ChangeFollowNumBody struct {
 	UserId   int  `json:"user_id"`

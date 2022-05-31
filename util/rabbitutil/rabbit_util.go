@@ -6,7 +6,7 @@ package rabbitutil
 
 import (
 	"douyin/config"
-	"douyin/entity/bo"
+	"douyin/entity/rabbitentity"
 	"encoding/json"
 	"github.com/streadway/amqp"
 )
@@ -22,9 +22,9 @@ func ChangeFollowNum(userId int, toUserId int, isFollow bool) error {
 	if err := initChangeFollowNum(); err != nil {
 		return err
 	}
-	var body = bo.ChangeFollowNumBody{UserId: userId, ToUserId: toUserId, IsFollow: isFollow}
+	var body = rabbitentity.ChangeFollowNumBody{UserId: userId, ToUserId: toUserId, IsFollow: isFollow}
 	// 创建消息与管道
-	rabbitMSG := bo.RabbitMSG[bo.ChangeFollowNumBody]{Data: body, ResendCount: 0, Type: bo.CHANGE_FOLLOW_NUM}
+	rabbitMSG := rabbitentity.RabbitMSG[rabbitentity.ChangeFollowNumBody]{Data: body, ResendCount: 0, Type: rabbitentity.CHANGE_FOLLOW_NUM}
 	return Publish(&rabbitMSG,
 		config.Config.Rabbit.Exchange.ServiceExchange,
 		config.Config.Rabbit.Key.ChangeFollowNum)
@@ -38,7 +38,7 @@ func UploadVideo(videoId int) error {
 		return err
 	}
 	// 创建消息与管道
-	rabbitMSG := bo.RabbitMSG[int]{Data: videoId, ResendCount: 0, Type: bo.UPLOAD_VIDEO}
+	rabbitMSG := rabbitentity.RabbitMSG[int]{Data: videoId, ResendCount: 0, Type: rabbitentity.UPLOAD_VIDEO}
 	return Publish(&rabbitMSG,
 		config.Config.Rabbit.Exchange.ServiceExchange,
 		config.Config.Rabbit.Key.UploadVideo)
@@ -51,14 +51,14 @@ func FeedVideo(videoId int) error {
 		return err
 	}
 	// 创建消息与管道
-	rabbitMSG := bo.RabbitMSG[int]{Data: videoId, ResendCount: 0, Type: bo.FEED_VIDEO}
+	rabbitMSG := rabbitentity.RabbitMSG[int]{Data: videoId, ResendCount: 0, Type: rabbitentity.FEED_VIDEO}
 	return Publish(&rabbitMSG,
 		config.Config.Rabbit.Exchange.ServiceExchange,
 		config.Config.Rabbit.Key.FeedVideo)
 }
 
 // Publish 发布消息
-func Publish[T bo.RabbitType](rabbitMSG *bo.RabbitMSG[T], exchange string, key string) error {
+func Publish[T rabbitentity.RabbitType](rabbitMSG *rabbitentity.RabbitMSG[T], exchange string, key string) error {
 	data, err := json.Marshal(rabbitMSG)
 	if err != nil {
 		return err
