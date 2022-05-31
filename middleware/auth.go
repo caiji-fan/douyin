@@ -22,6 +22,7 @@ func JWTAuth(ctx *gin.Context) {
 	var err error
 	var tokenString string
 	var userId int
+	var hasUserId bool
 	//判断投稿接口
 	path := ctx.Request.URL.Path
 	isFeed := strings.Contains(path, "/douyin/feed")
@@ -37,15 +38,11 @@ func JWTAuth(ctx *gin.Context) {
 			return
 		}
 	} else {
-		//获取参数userId
-		userId, err = getUserId(ctx)
-		if err != nil {
-			log.Println(err)
-			return
-		}
 		//获取token
 		tokenString = ctx.Query("token")
 	}
+	//获取参数userId
+	userId, hasUserId, err = getUserId(ctx)
 
 	//解析token
 	err, uid := parseToken(ctx, tokenString)
@@ -59,8 +56,8 @@ func JWTAuth(ctx *gin.Context) {
 		log.Println(err)
 		return
 	}
-	//对比两个id是否一致 (投稿与Feed流接口不需要此判断)
-	if !(isPublish || isFeed) {
+	//对比两个id是否一致如果没有传入用户id就不用对比
+	if hasUserId {
 		err = equalId(ctx, userId, uid)
 		if err != nil {
 			log.Println(err)
@@ -74,16 +71,17 @@ func JWTAuth(ctx *gin.Context) {
 }
 
 //获取参数user_Id
-func getUserId(ctx *gin.Context) (int, error) {
-	userId, err := strconv.Atoi(ctx.Query("user_id"))
+func getUserId(ctx *gin.Context) (int, bool, error) {
+	userIdStr := ctx.Query("user_id")
+	if userIdStr == "" {
+		return 0, false, nil
+	}
+	userId, err := strconv.Atoi(userIdStr)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"status_code": http.StatusBadRequest,
-			"status_msg":  "未传入user_id",
-		})
+		ctx.JSON(http.StatusInternalServerError, response.SystemError)
 		ctx.Abort()
 	}
-	return userId, err
+	return userId, true, nil
 }
 
 //解析token
