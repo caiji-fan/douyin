@@ -19,6 +19,10 @@ func TestMain(t *testing.M) {
 	t.Run()
 }
 
+func TestInit(t *testing.T) {
+
+}
+
 // pass
 func TestChangeFollowNum(t *testing.T) {
 	err := ChangeFollowNum(1, 2, false)

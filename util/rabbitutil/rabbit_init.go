@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	conn    *amqp.Connection
-	channel *amqp.Channel
+	conn *amqp.Connection
 )
 
 // Init rabbitmq初始化
@@ -22,13 +21,6 @@ func Init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	channel, err = conn.Channel()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	if err := channel.Confirm(false); err != nil {
-		log.Fatalln(err)
-	}
 	// 开始监听消费
 	if err := initConsumer(); err != nil {
 		log.Fatalln(err)
@@ -36,7 +28,7 @@ func Init() {
 }
 
 // 声明交换机
-func initExchange(exchange string) error {
+func initExchange(exchange string, channel *amqp.Channel) error {
 	err := channel.ExchangeDeclare(exchange, "direct", true, false, false, false, nil)
 	if err != nil {
 		return err
@@ -45,7 +37,7 @@ func initExchange(exchange string) error {
 }
 
 // 声明队列
-func initQueue(queue string, args amqp.Table) error {
+func initQueue(queue string, args amqp.Table, channel *amqp.Channel) error {
 	_, err := channel.QueueDeclare(queue, true, false, false, false, args)
 	if err != nil {
 		return err
@@ -54,7 +46,7 @@ func initQueue(queue string, args amqp.Table) error {
 }
 
 // 声明绑定
-func initBinding(exchange, queue, key string) error {
+func initBinding(exchange, queue, key string, channel *amqp.Channel) error {
 	err := channel.QueueBind(queue, key, exchange, false, nil)
 	if err != nil {
 		return err
@@ -63,14 +55,14 @@ func initBinding(exchange, queue, key string) error {
 }
 
 // 声明整套消息路径
-func producerInit(exchange, queue, key string, args amqp.Table) error {
+func producerInit(exchange, queue, key string, args amqp.Table, channel *amqp.Channel) error {
 	// 声明交换机
-	err := initExchange(exchange)
+	err := initExchange(exchange, channel)
 	if err != nil {
 		return err
 	}
 	// 声明队列
-	err = initQueue(queue, args)
+	err = initQueue(queue, args, channel)
 	if err != nil {
 		return err
 	}
@@ -79,6 +71,7 @@ func producerInit(exchange, queue, key string, args amqp.Table) error {
 		exchange,
 		queue,
 		key,
+		channel,
 	)
 	if err != nil {
 		return err
@@ -87,12 +80,13 @@ func producerInit(exchange, queue, key string, args amqp.Table) error {
 }
 
 // 初始化投放视频流消息队列
-func initFeedVideo() error {
+func initFeedVideo(channel *amqp.Channel) error {
 	if err := producerInit(
 		config.Config.Rabbit.Exchange.DeadServiceExchange,
 		config.Config.Rabbit.Queue.DeadFeedVideo,
 		config.Config.Rabbit.Key.FeedVideo,
 		nil,
+		channel,
 	); err != nil {
 		return err
 	}
@@ -106,6 +100,7 @@ func initFeedVideo() error {
 			"x-dead-letter-exchange":    config.Config.Rabbit.Exchange.DeadServiceExchange,
 			"x-dead-letter-routing-key": config.Config.Rabbit.Key.FeedVideo,
 		},
+		channel,
 	); err != nil {
 		return err
 	}
@@ -113,12 +108,13 @@ func initFeedVideo() error {
 }
 
 // 初始化上传视频消息队列
-func initUploadVideo() error {
+func initUploadVideo(channel *amqp.Channel) error {
 	if err := producerInit(
 		config.Config.Rabbit.Exchange.DeadServiceExchange,
 		config.Config.Rabbit.Queue.DeadUploadVideo,
 		config.Config.Rabbit.Key.UploadVideo,
 		nil,
+		channel,
 	); err != nil {
 		return err
 	}
@@ -132,6 +128,7 @@ func initUploadVideo() error {
 			"x-dead-letter-exchange":    config.Config.Rabbit.Exchange.DeadServiceExchange,
 			"x-dead-letter-routing-key": config.Config.Rabbit.Key.UploadVideo,
 		},
+		channel,
 	); err != nil {
 		return err
 	}
@@ -139,13 +136,14 @@ func initUploadVideo() error {
 }
 
 // 初始化修改关注数量的消息队列
-func initChangeFollowNum() error {
+func initChangeFollowNum(channel *amqp.Channel) error {
 	// 声明服务端
 	if err := producerInit(
 		config.Config.Rabbit.Exchange.ServiceExchange,
 		config.Config.Rabbit.Queue.ChangeFollowNum,
 		config.Config.Rabbit.Key.ChangeFollowNum,
 		nil,
+		channel,
 	); err != nil {
 		return err
 	}

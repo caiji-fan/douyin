@@ -37,13 +37,20 @@ func initConsumer() error {
 
 // 初始化rabbitmq服务器
 func initServer() error {
-	if err := initFeedVideo(); err != nil {
+	channel, err := conn.Channel()
+	if err != nil {
 		return err
 	}
-	if err := initUploadVideo(); err != nil {
+	if err := initFeedVideo(channel); err != nil {
 		return err
 	}
-	if err := initChangeFollowNum(); err != nil {
+	if err := initUploadVideo(channel); err != nil {
+		return err
+	}
+	if err := initChangeFollowNum(channel); err != nil {
+		return err
+	}
+	if err := channel.Close(); err != nil {
 		return err
 	}
 	return nil
@@ -51,6 +58,10 @@ func initServer() error {
 
 // 修改关注数量消费
 func changeFollowNumConsumer() error {
+	channel, err := conn.Channel()
+	if err != nil {
+		return err
+	}
 	consume, err := channel.Consume(
 		config.Config.Rabbit.Queue.ChangeFollowNum,
 		"",
@@ -82,6 +93,10 @@ func changeFollowNumConsumer() error {
 
 // 上传视频消费
 func uploadVideoConsumer() error {
+	channel, err := conn.Channel()
+	if err != nil {
+		return err
+	}
 	consume, err := channel.Consume(
 		config.Config.Rabbit.Queue.DeadUploadVideo,
 		"",
@@ -115,6 +130,10 @@ func uploadVideoConsumer() error {
 
 // 投放视频流消费
 func feedVideoConsumer() error {
+	channel, err := conn.Channel()
+	if err != nil {
+		return err
+	}
 	consume, err := channel.Consume(
 		config.Config.Rabbit.Queue.DeadFeedVideo,
 		"",
