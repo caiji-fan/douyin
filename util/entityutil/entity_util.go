@@ -10,7 +10,6 @@ import (
 	"douyin/entity/po"
 	"douyin/middleware"
 	"douyin/repositories/daoimpl"
-	"fmt"
 	"strconv"
 )
 
@@ -38,7 +37,7 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 	if err != nil {
 		return err
 	}
-	i = 0
+	var destMap = make(map[int]bo.Comment, len(*src)) //key:评论id;value:bo评论实体
 	for _, userPo := range *userList {
 		c1s := cu[userPo.ID]
 		//将po数据库user转换为bo业务user
@@ -55,9 +54,11 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 				Content:    c1.Content,
 				CreateDate: c1.CreateTime.Format("01-02"),
 			}
-			(*dest)[i] = commentBo
-			i++
+			destMap[commentBo.ID] = commentBo
 		}
+	}
+	for i, comment := range *src {
+		(*dest)[i] = destMap[comment.ID]
 	}
 	return nil
 }
@@ -107,7 +108,7 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 			favoriteVideoIdMap[videoId] = uid
 		} //key=视频id(当前登录用户喜欢的所有视频),value=当前登录用户id
 	}
-	var i = 0
+	var destMap = make(map[int]bo.Video, len(*src)) //key:视频id;value:bo视频对象
 	for _, userPo := range *userList {
 		videos := videosMap[userPo.ID]
 		//将po数据库user转换为bo业务user
@@ -133,9 +134,11 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 			} else {
 				videoBo.IsFavorite = false
 			}
-			(*dest)[i] = videoBo
-			i++
+			destMap[videoBo.ID] = videoBo
 		}
+	}
+	for i, video := range *src {
+		(*dest)[i] = destMap[video.ID]
 	}
 	return nil
 }
@@ -153,7 +156,7 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 		return err
 	}
 	//todo测试用
-	//uid := 111 //测试用
+	//uid := 1 //测试用
 	allFollowsId, err := daoimpl.NewRelationDaoInstance().QueryFollowIdByFansId(uid)
 	//查出目前用户关注的所有的人的id
 	var followsMap = make(map[int]int, len(allFollowsId))
@@ -184,7 +187,6 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 		(*dest).IsFollow = false //未登录直接false
 	} else { //登录再查询判断
 		userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-		fmt.Println(userId)
 		uid, err := strconv.Atoi(userId)
 		if err != nil {
 			return err
