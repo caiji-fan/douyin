@@ -14,11 +14,19 @@ import (
 	"douyin/util/redisutil"
 	"github.com/gin-gonic/gin"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var route *gin.Engine
 
 func main() {
+	go func() {
+		err := http.ListenAndServe("localhost:8888", nil)
+		if err != nil {
+			return
+		}
+	}()
 	err := route.Run(":" + config.Config.Server.Port)
 	if err != nil {
 		log.Fatalln(err)

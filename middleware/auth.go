@@ -22,11 +22,11 @@ func JWTAuth(ctx *gin.Context) {
 	var err error
 	var tokenString string
 	var userId int
-	var hasUserId bool
 	//判断投稿接口
 	path := ctx.Request.URL.Path
-	isFeed := strings.Contains(path, "/douyin/feed")
-	isPublish := strings.Contains(path, "/douyin/publish/action")
+	isFeed := strings.Contains(path, "/feed")
+	isPublish := strings.Contains(path, "/publish/action")
+	needCompareUserId := strings.Contains(path, "/favorite/action") || strings.Contains(path, "/comment/action") || strings.Contains(path, "/relation/action")
 	if isPublish {
 		//投稿接口 通过form-data获取token
 		tokenString = ctx.PostForm("token")
@@ -42,7 +42,7 @@ func JWTAuth(ctx *gin.Context) {
 		tokenString = ctx.Query("token")
 	}
 	//获取参数userId
-	userId, hasUserId, err = getUserId(ctx)
+	userId, err = getUserId(ctx)
 
 	//解析token
 	err, uid := parseToken(ctx, tokenString)
@@ -50,14 +50,17 @@ func JWTAuth(ctx *gin.Context) {
 		log.Println(err)
 		return
 	}
-	//从redis判断token是否有效
-	err = tokenValid(ctx, uid)
-	if err != nil {
-		log.Println(err)
-		return
+	if !isFeed {
+		//从redis判断token是否有效
+		err = tokenValid(ctx, uid)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 	}
+
 	//对比两个id是否一致如果没有传入用户id就不用对比
-	if hasUserId {
+	if needCompareUserId {
 		err = equalId(ctx, userId, uid)
 		if err != nil {
 			log.Println(err)
@@ -71,17 +74,17 @@ func JWTAuth(ctx *gin.Context) {
 }
 
 //获取参数user_Id
-func getUserId(ctx *gin.Context) (int, bool, error) {
+func getUserId(ctx *gin.Context) (int, error) {
 	userIdStr := ctx.Query("user_id")
 	if userIdStr == "" {
-		return 0, false, nil
+		return 0, nil
 	}
 	userId, err := strconv.Atoi(userIdStr)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, response.SystemError)
 		ctx.Abort()
 	}
-	return userId, true, nil
+	return userId, nil
 }
 
 //解析token

@@ -85,7 +85,7 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 	if err != nil {
 		return err
 	}
-	var isLogin bool = true
+	var isLogin = true
 	var favoriteVideoIdMap map[int]int
 	//todo暂改
 	if middleware.ThreadLocal.Get() == nil { //未登录状态

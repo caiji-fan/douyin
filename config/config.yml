@@ -83,7 +83,7 @@ redis:
   # 各个数据过期时间,数字+字符；如1s表示1秒
   expire-time:
     # 用户登录信息
-    token: "2h"
+    token: "24h"
     # 大v发件箱
     outbox: "24h"
     # 用户feed流收件箱
