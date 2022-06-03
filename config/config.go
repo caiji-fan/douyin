@@ -33,7 +33,7 @@ var Config *config
 
 // 读取yml文件
 func readConfig() {
-	file, err := ioutil.ReadFile("./config/config.yml")
+	file, err := ioutil.ReadFile("../../config/config.yml")
 	if err != nil {
 		log.Fatalln("读取文件config.yml发生错误", err)
 		return

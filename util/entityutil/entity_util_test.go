@@ -15,18 +15,6 @@ func TestMain(t *testing.M) {
 	daoimpl.Init()
 	t.Run()
 }
-func TestTest(t *testing.T) {
-	var cu = make(map[int]int, 5)
-	cu[8] = 0
-	cu[2] = 29
-	cu[52] = 1
-	cu[111] = 11
-	cu[12] = 12
-	//for i:=0;i<5;i++{
-	//
-	//}
-	fmt.Println(cu)
-}
 func TestGetCommentBOS(t *testing.T) {
 	var coms []po.Comment = []po.Comment{
 		{po.EntityModel{19, time.Now(), time.Now()}, 1, 123, "真棒", '0'},

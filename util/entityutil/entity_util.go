@@ -20,45 +20,35 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 	if *dest == nil || len(*dest) < len(*src) {
 		*dest = make([]bo.Comment, len(*src))
 	}
-	var i = 0
-	var ids = make([]int, len(*src), len(*src)*4)
-	var cu = make(map[int][]*po.Comment, len(*src))
-	//key是po数据库用户id,value是对应的po评论实体切片(一个用户可能评论了多次)
-	for _, sr := range *src {
-		//用地址可以更省空间，但是也容易出错
-		temp := &sr     //temp是sr地址
-		temp1 := *temp  //temp1是temp的实体，也就是sr的数据实体
-		temp2 := &temp1 //temp2是temp1的地址，
-		cu[sr.SenderId] = append(cu[sr.SenderId], temp2)
-		ids[i] = sr.SenderId
+	var ids = make([]int, len(*src))
+	// 评论集合中所有用户的id集合
+	for i, val := range *src {
+		ids[i] = val.SenderId
 		i++
 	}
+	// 查询所有用户信息
 	userList, err := daoimpl.NewUserDaoInstance().QueryBatchIds(&ids)
 	if err != nil {
 		return err
 	}
-	var destMap = make(map[int]bo.Comment, len(*src)) //key:评论id;value:bo评论实体
-	for _, userPo := range *userList {
-		c1s := cu[userPo.ID]
-		//将po数据库user转换为bo业务user
-		var userBo = bo.User{}
-		//通过下面的自定义方法进行
-		err := GetUserBO(&userPo, &userBo)
-		if err != nil {
-			return err
-		}
-		for _, c1 := range c1s {
-			commentBo := bo.Comment{
-				ID:         c1.ID,  //bo评论id
-				User:       userBo, //bo业务user对象
-				Content:    c1.Content,
-				CreateDate: c1.CreateTime.Format("01-02"),
-			}
-			destMap[commentBo.ID] = commentBo
-		}
+	// 将用户信息转为bo
+	var userBOS []bo.User
+	err = GetUserBOS(userList, &userBOS)
+	if err != nil {
+		return err
 	}
-	for i, comment := range *src {
-		(*dest)[i] = destMap[comment.ID]
+	// 将用户id对应结构化数据存储到映射中
+	var userMap = make(map[int]bo.User, len(userBOS))
+	for i := range userBOS {
+		userMap[userBOS[i].ID] = userBOS[i]
+	}
+
+	// 遍历评论po集合，按顺序给bo初始化
+	for i, v := range *src {
+		(*dest)[i].ID = v.ID
+		(*dest)[i].CreateDate = v.CreateTime.Format("01-02")
+		(*dest)[i].Content = v.Content
+		(*dest)[i].User = userMap[v.SenderId]
 	}
 	return nil
 }
@@ -150,29 +140,46 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 	if *dest == nil || len(*dest) < len(*users) {
 		*dest = make([]bo.User, len(*users))
 	}
+
+	// 如果没有线程变量或者线程变量中没有用户id，表示没有登录，IsFollow字段设置为false
+	if middleware.ThreadLocal.Get() == nil || middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId] == "" {
+		for i, v := range *users {
+			(*dest)[i].ID = v.ID
+			(*dest)[i].FollowerCount = v.FollowerCount
+			(*dest)[i].FollowCount = v.FollowCount
+			(*dest)[i].Name = v.Name
+			(*dest)[i].IsFollow = false
+		}
+		return nil
+	}
+	// 已登录的处理
+	// 获取当前用户id
+	var currentUserId int
 	userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-	uid, err := strconv.Atoi(userId) //查出目前用户的id
+	var err error
+	currentUserId, err = strconv.Atoi(userId)
 	if err != nil {
 		return err
 	}
-	//todo测试用
-	//uid := 1 //测试用
-	allFollowsId, err := daoimpl.NewRelationDaoInstance().QueryFollowIdByFansId(uid)
-	//查出目前用户关注的所有的人的id
+
+	// 查询用户的关注的集合
+	allFollowsId, err := daoimpl.NewRelationDaoInstance().QueryFollowIdByFansId(currentUserId)
+	if err != nil {
+		return err
+	}
+	// 使用映射存储关注者的id，用空间换时间
 	var followsMap = make(map[int]int, len(allFollowsId))
-	if err != nil {
-		return err
-	}
 	for _, follow := range allFollowsId {
-		followsMap[follow] = uid //key=关注的人的id；value=目前用户id
+		followsMap[follow] = currentUserId //key=关注的人的id；value=目前用户id
 	}
-	for i, poUser := range *users {
-		(*dest)[i].ID = poUser.ID
-		(*dest)[i].Name = poUser.Name
-		(*dest)[i].FollowCount = poUser.FollowerCount
-		(*dest)[i].FollowerCount = poUser.FollowerCount
-		_, boool := followsMap[poUser.ID]
-		(*dest)[i].IsFollow = boool
+
+	// 遍历原切片，通过映射得到bo集合
+	for i, v := range *users {
+		(*dest)[i].ID = v.ID
+		(*dest)[i].Name = v.Name
+		(*dest)[i].FollowCount = v.FollowerCount
+		(*dest)[i].FollowerCount = v.FollowerCount
+		_, (*dest)[i].IsFollow = followsMap[v.ID]
 	}
 	return nil
 }
