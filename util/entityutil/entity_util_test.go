@@ -15,6 +15,16 @@ func TestMain(t *testing.M) {
 	daoimpl.Init()
 	t.Run()
 }
+
+func Test1(t *testing.T) {
+
+}
+func TestCopyUserProperties(t *testing.T) {
+	var src = po.User{Name: "123"}
+	var dest bo.User
+	copyUserProperties(&src, &dest)
+	fmt.Println(dest)
+}
 func TestGetCommentBOS(t *testing.T) {
 	var coms []po.Comment = []po.Comment{
 		{po.EntityModel{19, time.Now(), time.Now()}, 1, 123, "真棒", '0'},

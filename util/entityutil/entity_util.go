@@ -45,9 +45,7 @@ func GetCommentBOS(src *[]po.Comment, dest *[]bo.Comment) error {
 
 	// 遍历评论po集合，按顺序给bo初始化
 	for i, v := range *src {
-		(*dest)[i].ID = v.ID
-		(*dest)[i].CreateDate = v.CreateTime.Format("01-02")
-		(*dest)[i].Content = v.Content
+		copyCommentProperties(&v, &(*dest)[i])
 		(*dest)[i].User = userMap[v.SenderId]
 	}
 	return nil
@@ -60,75 +58,57 @@ func GetVideoBOS(src *[]po.Video, dest *[]bo.Video) error {
 	if *dest == nil || len(*dest) < len(*src) {
 		*dest = make([]bo.Video, len(*src))
 	}
-	var ids = make([]int, len(*src), len(*src)*4)
-	var videosMap = make(map[int][]*po.Video, len(*src))
-	//key是作者id,value是视频切片
-	//因为一个作者可能有多个作品，所以同上评论一样
-	for i, sr := range *src {
-		ids[i] = sr.AuthorId
-		//用地址可以更省空间，但是也容易出错
-		temp := &sr     //temp是sr地址
-		temp1 := *temp  //temp1是temp的实体，也就是sr的数据实体
-		temp2 := &temp1 //temp2是temp1的地址，
-		videosMap[sr.AuthorId] = append(videosMap[sr.AuthorId], temp2)
+	var ids = make([]int, len(*src))
+	// 评论集合中所有用户的id集合
+	for i, val := range *src {
+		ids[i] = val.AuthorId
+		i++
 	}
-	userList, err := daoimpl.NewUserDaoInstance().QueryBatchIds(&ids) //把这些视频的所有作者查出来
+	// 查询所有用户信息
+	userList, err := daoimpl.NewUserDaoInstance().QueryBatchIds(&ids)
 	if err != nil {
 		return err
 	}
-	var isLogin = true
-	var favoriteVideoIdMap map[int]int
-	//todo暂改
-	if middleware.ThreadLocal.Get() == nil { //未登录状态
-		isLogin = false
-	} else { //已登陆状态
-		userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
-		uid, err := strconv.Atoi(userId) //uid为当前登录用户id
-		if err != nil {
-			return err
-		}
-		//todo单元测试暂改
-		//uid := 1 //单元测试用
-		favoriteVideoId, err := daoimpl.NewFavoriteDaoInstance().QueryVideoIdsByUserId(uid)
-		if err != nil {
-			return err
-		}
-		favoriteVideoIdMap = make(map[int]int, len(favoriteVideoId))
-		for _, videoId := range favoriteVideoId {
-			favoriteVideoIdMap[videoId] = uid
-		} //key=视频id(当前登录用户喜欢的所有视频),value=当前登录用户id
+	// 将用户信息转为bo
+	var userBOS []bo.User
+	err = GetUserBOS(userList, &userBOS)
+	if err != nil {
+		return err
 	}
-	var destMap = make(map[int]bo.Video, len(*src)) //key:视频id;value:bo视频对象
-	for _, userPo := range *userList {
-		videos := videosMap[userPo.ID]
-		//将po数据库user转换为bo业务user
-		var userBo = bo.User{}
-		//通过下面的自定义方法进行
-		err := GetUserBO(&userPo, &userBo)
-		if err != nil {
-			return err
-		}
-		for _, video := range videos {
-			videoBo := bo.Video{
-				ID:            video.ID,
-				Author:        userBo,
-				PlayUrl:       video.PlayUrl,
-				CoverUrl:      video.CoverUrl,
-				FavoriteCount: video.FavoriteCount,
-				CommentCount:  video.CommentCount,
-				Title:         video.Title,
-			}
-			if isLogin {
-				_, boool := favoriteVideoIdMap[video.ID]
-				videoBo.IsFavorite = boool
-			} else {
-				videoBo.IsFavorite = false
-			}
-			destMap[videoBo.ID] = videoBo
-		}
+	// 将用户id对应结构化数据存储到映射中
+	var userMap = make(map[int]bo.User, len(userBOS))
+	for i := range userBOS {
+		userMap[userBOS[i].ID] = userBOS[i]
 	}
-	for i, video := range *src {
-		(*dest)[i] = destMap[video.ID]
+	// 遍历视频po集合，按顺序给bo初始化
+	for i, v := range *src {
+		copyVideoProperties(&v, &(*dest)[i])
+		(*dest)[i].Author = userMap[v.AuthorId]
+	}
+
+	// 如果未登录，不做是否点赞的处理，使用默认值false
+	if middleware.ThreadLocal.Get() == nil || middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId] == "" {
+		return nil
+	}
+	// 已登录的处理，对所有视频判断是否点赞
+	currentUserId, err := strconv.Atoi(middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId])
+	if err != nil {
+		return err
+	}
+	// 查询所有点赞的视频
+	favoriteVideoIds, err := daoimpl.NewFavoriteDaoInstance().QueryVideoIdsByUserId(currentUserId)
+	if err != nil {
+		return err
+	}
+	// 使用map存储点赞视频映射，以空间换时间
+	var videoMap = make(map[int]int, len(favoriteVideoIds))
+	for _, videoId := range favoriteVideoIds {
+		videoMap[videoId] = 1
+	}
+
+	// 根据映射获取每个视频是否点赞
+	for i, v := range *src {
+		_, (*dest)[i].IsFavorite = videoMap[v.ID]
 	}
 	return nil
 }
@@ -144,10 +124,7 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 	// 如果没有线程变量或者线程变量中没有用户id，表示没有登录，IsFollow字段设置为false
 	if middleware.ThreadLocal.Get() == nil || middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId] == "" {
 		for i, v := range *users {
-			(*dest)[i].ID = v.ID
-			(*dest)[i].FollowerCount = v.FollowerCount
-			(*dest)[i].FollowCount = v.FollowCount
-			(*dest)[i].Name = v.Name
+			copyUserProperties(&v, &(*dest)[i])
 			(*dest)[i].IsFollow = false
 		}
 		return nil
@@ -175,10 +152,7 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 
 	// 遍历原切片，通过映射得到bo集合
 	for i, v := range *users {
-		(*dest)[i].ID = v.ID
-		(*dest)[i].Name = v.Name
-		(*dest)[i].FollowCount = v.FollowerCount
-		(*dest)[i].FollowerCount = v.FollowerCount
+		copyUserProperties(&v, &(*dest)[i])
 		_, (*dest)[i].IsFollow = followsMap[v.ID]
 	}
 	return nil
@@ -188,18 +162,15 @@ func GetUserBOS(users *[]po.User, dest *[]bo.User) error {
 // src				用户PO
 // dest				用户BO
 func GetUserBO(src *po.User, dest *bo.User) error {
-	//先处理isFollow
-	//todo暂改
-	if middleware.ThreadLocal.Get() == nil { //判断是否登录
-		(*dest).IsFollow = false //未登录直接false
-	} else { //登录再查询判断
+	// 判断是否登录
+	if middleware.ThreadLocal.Get() == nil || middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId] == "" {
+		(*dest).IsFollow = false
+	} else {
 		userId := middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId]
 		uid, err := strconv.Atoi(userId)
 		if err != nil {
 			return err
 		}
-		//todo单元测试暂改
-		//uid := 1 //单元测试用
 		var poFollow = po.Follow{
 			FollowId:   (*src).ID,
 			FollowerId: uid,
@@ -208,17 +179,10 @@ func GetUserBO(src *po.User, dest *bo.User) error {
 		if err != nil {
 			return err
 		}
-		if len(*poFollows) == 0 {
-			(*dest).IsFollow = false
-		} else {
-			(*dest).IsFollow = true
-		}
+		dest.IsFollow = len(*poFollows) != 0
 	}
-	//再处理其他简单的处理
-	dest.ID = src.ID
-	dest.Name = src.Name
-	dest.FollowCount = src.FollowCount
-	dest.FollowerCount = src.FollowerCount
+	// 复制用户相同属性
+	copyUserProperties(src, dest)
 	return nil
 }
 
@@ -233,4 +197,29 @@ func GetFeedBOS(src *[]po.Feed, dest *[]bo.Feed) {
 	for index, feed := range *src {
 		(*dest)[index] = bo.Feed{VideoId: feed.VideoId, CreateTime: feed.CreateTime}
 	}
+}
+
+// 复制用户属性
+func copyUserProperties(src *po.User, dest *bo.User) {
+	dest.ID = src.ID
+	dest.Name = src.Name
+	dest.FollowCount = src.FollowCount
+	dest.FollowerCount = src.FollowerCount
+}
+
+// 复制评论属性
+func copyCommentProperties(src *po.Comment, dest *bo.Comment) {
+	dest.ID = src.ID
+	dest.CreateDate = src.CreateTime.Format("01-02")
+	dest.Content = src.Content
+}
+
+// 复制视频属性
+func copyVideoProperties(src *po.Video, dest *bo.Video) {
+	dest.ID = src.ID
+	dest.CoverUrl = src.CoverUrl
+	dest.PlayUrl = src.PlayUrl
+	dest.CommentCount = src.CommentCount
+	dest.FavoriteCount = src.FavoriteCount
+	dest.Title = src.Title
 }
