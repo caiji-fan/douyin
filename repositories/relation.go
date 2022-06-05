@@ -3,18 +3,21 @@
 // @Date 2022/5/13
 package repositories
 
-import "douyin/entity/po"
+import (
+	"douyin/entity/po"
+	"gorm.io/gorm"
+)
 
 // Relation 关注持久层接口
 type Relation interface {
 
 	// Insert 					增加关注关系
 	// follow 					关注信息
-	Insert(follow *po.Follow) error
+	Insert(follow *po.Follow, tx *gorm.DB, isTx bool) error
 
 	// DeleteByCondition 		条件删除关注关系
 	// follow 					删除条件
-	DeleteByCondition(follow *po.Follow) error
+	DeleteByCondition(follow *po.Follow, tx *gorm.DB, isTx bool) error
 
 	//QueryByCondition          条件查询
 	//follow					查询条件

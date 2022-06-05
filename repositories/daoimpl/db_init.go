@@ -36,3 +36,8 @@ func Init() {
 	pool.SetMaxIdleConns(dbConf.Pool.MaxIdleConn)
 	pool.SetConnMaxLifetime(dbConf.Pool.ConnMaxLifetime)
 }
+
+// Begin 开启事务
+func Begin() *gorm.DB {
+	return db.Begin()
+}

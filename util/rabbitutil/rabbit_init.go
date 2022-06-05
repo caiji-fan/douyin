@@ -135,13 +135,27 @@ func initUploadVideo(channel *amqp.Channel) error {
 	return nil
 }
 
-// 初始化修改关注数量的消息队列
-func initChangeFollowNum(channel *amqp.Channel) error {
+// 初始化关注处理的消息队列
+func initFollow(channel *amqp.Channel) error {
 	// 声明服务端
 	if err := producerInit(
 		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Queue.ChangeFollowNum,
-		config.Config.Rabbit.Key.ChangeFollowNum,
+		config.Config.Rabbit.Queue.Follow,
+		config.Config.Rabbit.Key.Follow,
+		nil,
+		channel,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+// 初始化点赞处理的消息队列
+func initFavorite(channel *amqp.Channel) error {
+	if err := producerInit(
+		config.Config.Rabbit.Exchange.ServiceExchange,
+		config.Config.Rabbit.Queue.Favorite,
+		config.Config.Rabbit.Key.Favorite,
 		nil,
 		channel,
 	); err != nil {

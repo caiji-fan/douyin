@@ -6,29 +6,40 @@ package daoimpl
 import (
 	"douyin/entity/po"
 	"douyin/repositories"
+	"gorm.io/gorm"
 	"sync"
 )
 
 type Relation struct {
 }
 
-func (r Relation) Insert(follow *po.Follow) error {
-	err := db.Select([]string{"follow_id", "follower_id"}).Create(follow).Error
+func (r Relation) Insert(follow *po.Follow, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
+	err := db1.Select([]string{"follow_id", "follower_id"}).Create(follow).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r Relation) DeleteByCondition(follow *po.Follow) error {
-	followId := follow.FollowId
-	followerId := follow.FollowerId
-	db1 := db
-	if followId != 0 {
-		db1 = db1.Where("follow_id = ?", followId)
+func (r Relation) DeleteByCondition(follow *po.Follow, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
 	}
-	if followerId != 0 {
-		db1 = db1.Where("follower_id = ?", followerId)
+
+	if follow.FollowId != 0 {
+		db1 = db1.Where("follow_id = ?", follow.FollowId)
+	}
+	if follow.FollowerId != 0 {
+		db1 = db1.Where("follower_id = ?", follow.FollowerId)
 	}
 	err := db1.Delete(&po.Follow{}).Error
 	if err != nil {

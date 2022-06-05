@@ -4,9 +4,10 @@
 package rabbitentity
 
 const (
-	CHANGE_FOLLOW_NUM = '1'
-	UPLOAD_VIDEO      = '2'
-	FEED_VIDEO        = '3'
+	FOLLOW       = '1'
+	UPLOAD_VIDEO = '2'
+	FEED_VIDEO   = '3'
+	FAVORITE     = '4'
 )
 
 // RabbitMSG 消息队列标准消息体
@@ -19,5 +20,5 @@ type RabbitMSG[T RabbitType] struct {
 }
 
 type RabbitType interface {
-	int | ChangeFollowNumBody
+	int | Follow | Favorite
 }

@@ -13,25 +13,47 @@ import (
 
 const MANDATORY = true
 
-// ChangeFollowNum 		修改用户粉丝数和关注数
-// userId 				发起关注或取关的用户id
-// toUserId 			收到关注或取关的用户id
-// isFollow 			是否是关注请求
-func ChangeFollowNum(userId int, toUserId int, isFollow bool) error {
+// Favorite  			点赞操作
+// userId 				用户id
+// videoId 				视频id
+// isFavorite			是否是点赞操作
+func Favorite(userId, videoId int, isFavorite bool) error {
 	channel, err := conn.Channel()
 	if err != nil {
 		return err
 	}
 	// 服务端声明
-	if err := initChangeFollowNum(channel); err != nil {
+	if err := initFavorite(channel); err != nil {
 		return err
 	}
-	var body = rabbitentity.ChangeFollowNumBody{UserId: userId, ToUserId: toUserId, IsFollow: isFollow}
+	var body = rabbitentity.Favorite{UserId: userId, VideoId: videoId, IsFavorite: isFavorite}
 	// 创建消息与管道
-	rabbitMSG := rabbitentity.RabbitMSG[rabbitentity.ChangeFollowNumBody]{Data: body, ResendCount: 0, Type: rabbitentity.CHANGE_FOLLOW_NUM}
-	return publish[rabbitentity.ChangeFollowNumBody](&rabbitMSG,
+	rabbitMSG := rabbitentity.RabbitMSG[rabbitentity.Favorite]{Data: body, ResendCount: 0, Type: rabbitentity.FAVORITE}
+	return publish[rabbitentity.Favorite](&rabbitMSG,
 		config.Config.Rabbit.Exchange.ServiceExchange,
-		config.Config.Rabbit.Key.ChangeFollowNum,
+		config.Config.Rabbit.Key.Favorite,
+		channel)
+}
+
+// Follow 				关注操作
+// userId 				发起关注或取关的用户id
+// toUserId 			收到关注或取关的用户id
+// isFollow 			是否是关注操作
+func Follow(userId, toUserId int, isFollow bool) error {
+	channel, err := conn.Channel()
+	if err != nil {
+		return err
+	}
+	// 服务端声明
+	if err := initFollow(channel); err != nil {
+		return err
+	}
+	var body = rabbitentity.Follow{UserId: userId, ToUserId: toUserId, IsFollow: isFollow}
+	// 创建消息与管道
+	rabbitMSG := rabbitentity.RabbitMSG[rabbitentity.Follow]{Data: body, ResendCount: 0, Type: rabbitentity.FOLLOW}
+	return publish[rabbitentity.Follow](&rabbitMSG,
+		config.Config.Rabbit.Exchange.ServiceExchange,
+		config.Config.Rabbit.Key.Follow,
 		channel)
 }
 

@@ -111,10 +111,25 @@ func handleErrorMSG() {
 		}
 		return
 	}
-	for _, msg := range msgS.ChangeFollowNum {
-		err := rabbitutil.Publish[rabbitentity.ChangeFollowNumBody](&msg,
+	for _, msg := range msgS.Favorite {
+		err := rabbitutil.Publish[rabbitentity.Favorite](&msg,
 			config.Config.Rabbit.Exchange.ServiceExchange,
-			config.Config.Rabbit.Key.ChangeFollowNum,
+			config.Config.Rabbit.Key.Follow,
+		)
+		if err != nil {
+			log.Println(err)
+			err := p.Discard()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			return
+		}
+	}
+	for _, msg := range msgS.Follow {
+		err := rabbitutil.Publish[rabbitentity.Follow](&msg,
+			config.Config.Rabbit.Exchange.ServiceExchange,
+			config.Config.Rabbit.Key.Follow,
 		)
 		if err != nil {
 			log.Println(err)

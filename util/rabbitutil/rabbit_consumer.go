@@ -13,9 +13,11 @@ import (
 	"douyin/util/redisutil"
 	"encoding/json"
 	"github.com/go-redis/redis"
+	"gorm.io/gorm"
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // 初始化consumer
@@ -23,13 +25,16 @@ func initConsumer() error {
 	if err := initServer(); err != nil {
 		return err
 	}
-	if err := changeFollowNumConsumer(); err != nil {
+	if err := followConsumer(); err != nil {
 		return err
 	}
 	if err := uploadVideoConsumer(); err != nil {
 		return err
 	}
 	if err := feedVideoConsumer(); err != nil {
+		return err
+	}
+	if err := favoriteConsumer(); err != nil {
 		return err
 	}
 	return nil
@@ -47,7 +52,10 @@ func initServer() error {
 	if err := initUploadVideo(channel); err != nil {
 		return err
 	}
-	if err := initChangeFollowNum(channel); err != nil {
+	if err := initFollow(channel); err != nil {
+		return err
+	}
+	if err := initFavorite(channel); err != nil {
 		return err
 	}
 	if err := channel.Close(); err != nil {
@@ -56,14 +64,14 @@ func initServer() error {
 	return nil
 }
 
-// 修改关注数量消费
-func changeFollowNumConsumer() error {
+// 点赞消费者
+func favoriteConsumer() error {
 	channel, err := conn.Channel()
 	if err != nil {
 		return err
 	}
 	consume, err := channel.Consume(
-		config.Config.Rabbit.Queue.ChangeFollowNum,
+		config.Config.Rabbit.Queue.Favorite,
 		"",
 		false,
 		false,
@@ -77,15 +85,50 @@ func changeFollowNumConsumer() error {
 	// 协程处理消费
 	go func() {
 		for msg := range consume {
-			var rabbitMSG rabbitentity.RabbitMSG[rabbitentity.ChangeFollowNumBody]
+			var rabbitMSG rabbitentity.RabbitMSG[rabbitentity.Favorite]
 			//反序列化
 			err := json.Unmarshal(msg.Body, &rabbitMSG)
-			failOnErrorChangeFollowNumBody(err, &rabbitMSG)
-			changeFollowNumBody := rabbitMSG.Data
-			err = doChangeFollowNum(&changeFollowNumBody)
-			failOnErrorChangeFollowNumBody(err, &rabbitMSG)
+			failOnErrorFavorite(err, &rabbitMSG)
+			data := rabbitMSG.Data
+			err = like(&data)
+			failOnErrorFavorite(err, &rabbitMSG)
 			err = msg.Ack(true)
-			failOnErrorChangeFollowNumBody(err, &rabbitMSG)
+			failOnErrorFavorite(err, &rabbitMSG)
+		}
+	}()
+	return nil
+}
+
+// 修改关注数量消费
+func followConsumer() error {
+	channel, err := conn.Channel()
+	if err != nil {
+		return err
+	}
+	consume, err := channel.Consume(
+		config.Config.Rabbit.Queue.Follow,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return err
+	}
+	// 协程处理消费
+	go func() {
+		for msg := range consume {
+			var rabbitMSG rabbitentity.RabbitMSG[rabbitentity.Follow]
+			//反序列化
+			err := json.Unmarshal(msg.Body, &rabbitMSG)
+			failOnErrorFollow(err, &rabbitMSG)
+			changeFollowNumBody := rabbitMSG.Data
+			err = follow(&changeFollowNumBody)
+			failOnErrorFollow(err, &rabbitMSG)
+			err = msg.Ack(true)
+			failOnErrorFollow(err, &rabbitMSG)
 		}
 	}()
 	return nil
@@ -118,7 +161,7 @@ func uploadVideoConsumer() error {
 			failOnErrorInt(err, &rabbitMSG)
 			//查询video数据
 			videoId := rabbitMSG.Data
-			err = doUploadVideo(videoId)
+			err = uploadVideo(videoId)
 			failOnErrorInt(err, &rabbitMSG)
 			// 确认收到消息
 			err = msg.Ack(true)
@@ -177,13 +220,25 @@ func failOnErrorInt(err error, msg *rabbitentity.RabbitMSG[int]) {
 }
 
 // 消息补偿机制
-func failOnErrorChangeFollowNumBody(err error, msg *rabbitentity.RabbitMSG[rabbitentity.ChangeFollowNumBody]) {
+func failOnErrorFollow(err error, msg *rabbitentity.RabbitMSG[rabbitentity.Follow]) {
 	if err != nil {
 		msg.ResendCount++
 		if int(msg.ResendCount) > config.Config.Rabbit.ResendMax {
 			// todo 报警
 		}
-		handleErrorChangeFollowNumBody(msg)
+		handleErrorFollow(msg)
+		log.Println(err)
+	}
+}
+
+// 消息补偿机制
+func failOnErrorFavorite(err error, msg *rabbitentity.RabbitMSG[rabbitentity.Favorite]) {
+	if err != nil {
+		msg.ResendCount++
+		if int(msg.ResendCount) > config.Config.Rabbit.ResendMax {
+			// todo 报警
+		}
+		handleErrorFavorite(msg)
 		log.Println(err)
 	}
 }
@@ -215,7 +270,7 @@ func handleErrorInt(msg *rabbitentity.RabbitMSG[int]) {
 }
 
 // 存储消息补偿信息
-func handleErrorChangeFollowNumBody(msg *rabbitentity.RabbitMSG[rabbitentity.ChangeFollowNumBody]) {
+func handleErrorFollow(msg *rabbitentity.RabbitMSG[rabbitentity.Follow]) {
 	// 利用信道加锁
 	rabbitentity.ErrorMsgLockChan <- 1
 	var rabbitErrorMSG rabbitentity.RabbitErrorMSG
@@ -225,7 +280,7 @@ func handleErrorChangeFollowNumBody(msg *rabbitentity.RabbitMSG[rabbitentity.Cha
 		<-rabbitentity.ErrorMsgLockChan
 		return
 	}
-	rabbitErrorMSG.ChangeFollowNum = append(rabbitErrorMSG.ChangeFollowNum, *msg)
+	rabbitErrorMSG.Follow = append(rabbitErrorMSG.Follow, *msg)
 	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
 	if err != nil {
 		log.Println(err)
@@ -235,24 +290,38 @@ func handleErrorChangeFollowNumBody(msg *rabbitentity.RabbitMSG[rabbitentity.Cha
 	<-rabbitentity.ErrorMsgLockChan
 }
 
-// 更改关注和粉丝数量
-func doChangeFollowNum(body *rabbitentity.ChangeFollowNumBody) error {
-	var err error
-	tx := daoimpl.NewUserDaoInstance().Begin()
-	var difference int
-	if body.IsFollow {
-		difference = 1
-	} else {
-		difference = -1
-	}
-	// 增减发起请求的一方
-	err = daoimpl.NewUserDaoInstance().ChangeFollowCount(body.UserId, difference, tx, true)
+// 存储消息补偿信息
+func handleErrorFavorite(msg *rabbitentity.RabbitMSG[rabbitentity.Favorite]) {
+	// 利用信道加锁
+	rabbitentity.ErrorMsgLockChan <- 1
+	var rabbitErrorMSG rabbitentity.RabbitErrorMSG
+	err := redisutil.Get[rabbitentity.RabbitErrorMSG](config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
 	if err != nil {
-		tx.Rollback()
-		return err
+		log.Println(err)
+		<-rabbitentity.ErrorMsgLockChan
+		return
 	}
-	// 增减接收请求的一方
-	err = daoimpl.NewUserDaoInstance().ChangeFansCount(body.ToUserId, difference, tx, true)
+	rabbitErrorMSG.Favorite = append(rabbitErrorMSG.Favorite, *msg)
+	err = redisutil.Set(config.Config.Redis.Key.ErrorMessage, &rabbitErrorMSG)
+	if err != nil {
+		log.Println(err)
+		<-rabbitentity.ErrorMsgLockChan
+		return
+	}
+	<-rabbitentity.ErrorMsgLockChan
+}
+
+// 处理点赞操作
+func like(body *rabbitentity.Favorite) error {
+	var err error
+	tx := daoimpl.Begin()
+	wait := sync.WaitGroup{}
+	wait.Add(2)
+	if body.IsFavorite {
+		err = doLike(body.VideoId, body.UserId, &wait, tx)
+	} else {
+		err = cancelLike(body.VideoId, body.UserId, &wait, tx)
+	}
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -261,8 +330,117 @@ func doChangeFollowNum(body *rabbitentity.ChangeFollowNumBody) error {
 	return nil
 }
 
+// 点赞视频
+func doLike(videoId, userId int, wait *sync.WaitGroup, tx *gorm.DB) error {
+	var err error
+	//点赞视频
+	go func() {
+		defer wait.Done()
+		err = daoimpl.NewFavoriteDaoInstance().Insert(&po.Favorite{VideoId: videoId, UserId: userId})
+		if err != nil {
+			return
+		}
+	}()
+	//增加视频点赞数
+	go func() {
+		defer wait.Done()
+		err = daoimpl.NewVideoDaoInstance().ChangeFavoriteCount(1, videoId, tx, true)
+	}()
+	wait.Wait()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 取消点赞视频
+func cancelLike(videoId, userId int, wait *sync.WaitGroup, tx *gorm.DB) error {
+	var err error
+	//取消点赞视频
+	go func() {
+		defer wait.Done()
+		err = daoimpl.NewFavoriteDaoInstance().DeleteByCondition(&po.Favorite{VideoId: videoId, UserId: userId})
+		if err != nil {
+			return
+		}
+	}()
+	//减少视频点赞数
+	go func() {
+		defer wait.Done()
+		err = daoimpl.NewVideoDaoInstance().ChangeFavoriteCount(-1, videoId, tx, true)
+	}()
+	wait.Wait()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 关注操作
+func follow(body *rabbitentity.Follow) error {
+	var tx = daoimpl.Begin()
+	var err error
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	if body.IsFollow {
+		err = doFollow(body.UserId, body.ToUserId, &wg, tx)
+	} else {
+		err = cancelFollow(body.UserId, body.ToUserId, &wg, tx)
+	}
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
+}
+
+// 进行关注
+func doFollow(userId, toUserId int, wg *sync.WaitGroup, tx *gorm.DB) error {
+	var err error
+	go func() {
+		defer wg.Done()
+		err = daoimpl.NewRelationDaoInstance().Insert(&po.Follow{FollowId: toUserId, FollowerId: userId}, tx, true)
+	}()
+	go func() {
+		defer wg.Done()
+		err = daoimpl.NewUserDaoInstance().ChangeFollowCount(userId, 1, tx, true)
+	}()
+	go func() {
+		defer wg.Done()
+		err = daoimpl.NewUserDaoInstance().ChangeFansCount(toUserId, 1, tx, true)
+	}()
+	wg.Wait()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 取消关注
+func cancelFollow(userId, toUserId int, wg *sync.WaitGroup, tx *gorm.DB) error {
+	var err error
+	go func() {
+		defer wg.Done()
+		err = daoimpl.NewRelationDaoInstance().DeleteByCondition(&po.Follow{FollowId: toUserId, FollowerId: userId}, tx, true)
+	}()
+	go func() {
+		defer wg.Done()
+		err = daoimpl.NewUserDaoInstance().ChangeFollowCount(userId, -1, tx, true)
+	}()
+	go func() {
+		defer wg.Done()
+		err = daoimpl.NewUserDaoInstance().ChangeFansCount(toUserId, -1, tx, true)
+	}()
+	wg.Wait()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // 上传视频
-func doUploadVideo(videoId int) error {
+func uploadVideo(videoId int) error {
 	video, err := daoimpl.NewVideoDaoInstance().QueryById(videoId)
 	if err != nil {
 		return err

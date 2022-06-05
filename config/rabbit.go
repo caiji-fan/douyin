@@ -9,7 +9,8 @@ type rabbit struct {
 
 	ResendMax int `yaml:"resend-max"`
 	Queue     struct {
-		ChangeFollowNum string `yaml:"change-follow-num"`
+		Follow          string `yaml:"follow"`
+		Favorite        string `yaml:"favorite"`
 		UploadVideo     string `yaml:"upload-video"`
 		FeedVideo       string `yaml:"feed-video"`
 		DeadUploadVideo string `yaml:"dead-upload-video"`
@@ -22,9 +23,10 @@ type rabbit struct {
 	} `yaml:"ttl"`
 
 	Key struct {
-		ChangeFollowNum string `yaml:"change-follow-num"`
-		UploadVideo     string `yaml:"upload-video"`
-		FeedVideo       string `yaml:"feed-video"`
+		Follow      string `yaml:"follow"`
+		Favorite    string `yaml:"favorite"`
+		UploadVideo string `yaml:"upload-video"`
+		FeedVideo   string `yaml:"feed-video"`
 	} `yaml:"key"`
 
 	Exchange struct {

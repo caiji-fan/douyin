@@ -40,8 +40,10 @@ rabbit:
     dead-service-exchange: "dy_service_dead"
   # 队列名
   queue:
-    # 修改用户的关注数和粉丝数
-    change-follow-num: "change_follow_num"
+    # 关注操作
+    follow: "follow"
+    # 点赞操作
+    favorite: "favorite"
     # 上传文件到对象存储
     upload-video: "upload_video"
     # 投放视频到用户feed流
@@ -52,8 +54,10 @@ rabbit:
     dead-upload-video: "dead-upload-video"
   # 路由键名
   key:
-    # 修改用户的关注数和粉丝数
-    change-follow-num: "change_follow_num"
+    # 关注
+    follow: "follow"
+    # 点赞
+    favorite: "favorite"
     # 上传文件到对象存储
     upload-video: "upload_video"
     # 投放视频到用户feed流

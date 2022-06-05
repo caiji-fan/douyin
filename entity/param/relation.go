@@ -1,9 +1,15 @@
+// Package param
 /**
  * @Author yg
  * @Date 2022-05-17
  * @Description
  **/
 package param
+
+const (
+	DO_FOLLOW     = 1
+	CANCEL_FOLLOW = 2
+)
 
 //Relation 关注参数
 type Relation struct {

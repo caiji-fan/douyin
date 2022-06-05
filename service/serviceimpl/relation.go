@@ -18,34 +18,14 @@ type Relation struct {
 }
 
 func (r Relation) Follow(relationParam *param.Relation, userId int) error {
-	toUserId := relationParam.ToUserID
-	actionType := relationParam.ActionType
-	if actionType == 1 {
-		err := relationDao.Insert(&po.Follow{FollowId: toUserId, FollowerId: userId})
-		if err != nil {
-			return err
-		}
-		//使用消息队列 异步 增加user_id用户的关注量  增加toUserId用户的粉丝量
-		err = rabbitutil.ChangeFollowNum(userId, toUserId, true)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := relationDao.DeleteByCondition(&po.Follow{FollowId: toUserId, FollowerId: userId})
-		if err != nil {
-			return err
-		}
-		//使用消息队列 异步 减少user_id用户的关注量  减少toUserId用户的粉丝量
-		err = rabbitutil.ChangeFollowNum(userId, toUserId, false)
-		if err != nil {
-			return err
-		}
+	err := rabbitutil.Follow(userId, relationParam.ToUserID, relationParam.ActionType == param.DO_FOLLOW)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 func (r Relation) FollowList(userId int) (*[]bo.User, error) {
-
 	var userPOS *[]po.User
 	userPOS, err := daoimpl.NewUserDaoInstance().QueryFollows(userId)
 	if err != nil {
@@ -75,7 +55,6 @@ func (r Relation) FansList(userId int) (*[]bo.User, error) {
 }
 
 var (
-	relationDao  = daoimpl.NewRelationDaoInstance()
 	relation     service.Relation
 	relationOnce sync.Once
 )
