@@ -103,7 +103,7 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 	}
 	// 获得下一次请求的时间
 	nextTime := latestTime
-	if len(videos) > 1 {
+	if len(videos) > 0 {
 		nextTime = videos[len(videos)-1].CreateTime.UnixMilli()
 	}
 	return videoBOS, nextTime, nil
@@ -130,7 +130,7 @@ func (v Video) Publish(c *gin.Context, video *multipart.FileHeader, userId int, 
 	}
 	// 数据入库
 	var videoDB = daoimpl.NewVideoDaoInstance()
-	var tx = videoDB.Begin()
+	var tx = daoimpl.Begin()
 	var playUrl string
 	var coverUrl string
 	if config.Config.Server.WithProxy {
@@ -321,7 +321,7 @@ func mergeFeeds(feed1 *[]bo.Feed, feed2 *[]bo.Feed) ([]bo.Feed, error) {
 func clearInbox(trash *[]bo.Feed, userId int) (*gorm.DB, error) {
 	var err error
 	// 清理数据库中的数据
-	tx := daoimpl.NewFeedDaoInstance().Begin()
+	tx := daoimpl.Begin()
 	var trashPOS = make([]po.Feed, len(*trash))
 	for i, v := range *trash {
 		trashPOS[i] = po.Feed{VideoId: v.VideoId, UserId: userId}

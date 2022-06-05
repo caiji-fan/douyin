@@ -59,7 +59,4 @@ type Video interface {
 	// ChangeCommentCount		修改评论数量
 	// videoId 					视频id
 	ChangeCommentCount(difference, videoId int, tx *gorm.DB, isTx bool) error
-
-	// Begin 开启事务
-	Begin() *gorm.DB
 }

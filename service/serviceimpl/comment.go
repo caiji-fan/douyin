@@ -31,7 +31,7 @@ func (c Comment) Comment(commentParam *param.Comment, userId int) error {
 
 // 发布评论
 func doComment(commentParam *param.Comment, userId int) error {
-	tx := daoimpl.NewCommentDaoInstance().Begin()
+	tx := daoimpl.Begin()
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var err error
@@ -61,7 +61,7 @@ func doComment(commentParam *param.Comment, userId int) error {
 
 // 删除评论
 func deleteComment(commentParam *param.Comment) error {
-	tx := daoimpl.NewCommentDaoInstance().Begin()
+	tx := daoimpl.Begin()
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 	var err error

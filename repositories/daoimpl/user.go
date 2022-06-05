@@ -45,9 +45,7 @@ func NewUserDaoInstance() repositories.User {
 	})
 	return user
 }
-func (UserImpl) Begin() *gorm.DB {
-	return db.Begin()
-}
+
 func (UserImpl) QueryById(userId int) (*po.User, error) {
 	db1 := db
 	user := po.User{}

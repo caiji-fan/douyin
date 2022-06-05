@@ -35,7 +35,6 @@ type User interface {
 	// isTx				是否在事务内
 	UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error
 
-	Begin() (tx *gorm.DB)
 	// QueryByCondition		通过已有的属性查询
 	// user				用户
 	// @return 			用户切片

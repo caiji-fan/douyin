@@ -55,10 +55,6 @@ func (v Video) QueryForUpdate(videoId int, tx *gorm.DB) (*po.Video, error) {
 	return &video, err
 }
 
-func (v Video) Begin() *gorm.DB {
-	return db.Begin()
-}
-
 func (v Video) UpdateByCondition(video *po.Video, tx *gorm.DB, isTx bool) error {
 	var client *gorm.DB
 	if isTx {

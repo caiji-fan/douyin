@@ -52,10 +52,6 @@ func (f Feed) DeleteByCondition(feed *[]po.Feed, tx *gorm.DB, isTx bool) error {
 	return db1.Delete(po.Feed{}).Error
 }
 
-func (f Feed) Begin() *gorm.DB {
-	return db.Begin()
-}
-
 var (
 	feed     repositories.Feed
 	feedOnce sync.Once

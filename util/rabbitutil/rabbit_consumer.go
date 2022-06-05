@@ -538,7 +538,7 @@ func doFeedVideo(videoId int) error {
 		}
 		// 开始feed持久化，对数据入库
 		feedDao := daoimpl.NewFeedDaoInstance()
-		tx := feedDao.Begin()
+		tx := daoimpl.Begin()
 		err = feedDao.InsertBatch(&feeds, tx, true)
 		if err != nil {
 			tx.Rollback()

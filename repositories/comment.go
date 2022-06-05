@@ -22,6 +22,4 @@ type Comment interface {
 	// UpdateByCondition	条件更新评论数据
 	// comment				新的评论数据
 	UpdateByCondition(comment *po.Comment, tx *gorm.DB, isTx bool) error
-
-	Begin() *gorm.DB
 }

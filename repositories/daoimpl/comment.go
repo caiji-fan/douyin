@@ -13,10 +13,6 @@ import (
 type Comment struct {
 }
 
-func (c Comment) Begin() *gorm.DB {
-	return db.Begin()
-}
-
 func (c Comment) Insert(comment *po.Comment, tx *gorm.DB, isTx bool) error {
 	var db1 *gorm.DB
 	if isTx {
