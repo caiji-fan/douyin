@@ -4,13 +4,17 @@
 package controller
 
 import (
+	"douyin/config"
 	"douyin/entity/myerr"
 	"douyin/entity/param"
 	"douyin/entity/response"
+	"douyin/middleware"
 	"douyin/service/serviceimpl"
 	"douyin/util/webutil"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
+	"strconv"
 )
 
 var relationService = serviceimpl.NewRelationServiceInstance()
@@ -27,7 +31,12 @@ func Follow(ctx *gin.Context) {
 		return
 	}
 
-	err = relationService.Follow(&relation)
+	userId, err := strconv.Atoi(middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId])
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, response.SystemError)
+	}
+	err = relationService.Follow(&relation, userId)
 	if err != nil {
 		ctx.JSON(http.StatusForbidden, response.SystemError)
 		return

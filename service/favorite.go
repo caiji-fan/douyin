@@ -12,7 +12,8 @@ import (
 type Favorite interface {
 	// Like 			点赞操作
 	// favoriteParam 	点赞参数
-	Like(favoriteParam *param.Favorite) error
+	// userId			当前操作的用户id
+	Like(favoriteParam *param.Favorite, userId int) error
 
 	// FavoriteList 	点赞列表
 	// userId 			用户id

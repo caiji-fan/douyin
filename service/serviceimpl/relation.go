@@ -17,8 +17,7 @@ import (
 type Relation struct {
 }
 
-func (r Relation) Follow(relationParam *param.Relation) error {
-	userId := relationParam.UserID
+func (r Relation) Follow(relationParam *param.Relation, userId int) error {
 	toUserId := relationParam.ToUserID
 	actionType := relationParam.ActionType
 	if actionType == 1 {

@@ -14,7 +14,7 @@ type Relation interface {
 	// userId 		自己的id
 	// toUserId 	对方的id
 	// actionType 	操作类型，1-关注，2-取消关注
-	Follow(relationParam *param.Relation) error
+	Follow(relationParam *param.Relation, userId int) error
 
 	// FollowList 	查看关注列表
 	// userId 		用户id

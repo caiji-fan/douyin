@@ -13,7 +13,6 @@ type Comment struct {
 	VideoID     int    `form:"video_id" `
 	ActionType  byte   `form:"action_type" binding:"required" msg:"无效的操作类型"`
 	CommentText string `form:"comment_text"`
-	UserId      int    `form:"user_id"`
 	CommentId   int    `form:"comment_id"`
 }
 

@@ -52,6 +52,10 @@ type Video interface {
 	// @return 					(倒序)视频集合
 	QueryVideosByUserId(userId int) (*[]po.Video, error)
 
+	// ChangeFavoriteCount 		修改点赞的数量
+	// videoId					视频id
+	ChangeFavoriteCount(difference, videoId int, tx *gorm.DB, isTx bool) error
+
 	// Begin 开启事务
 	Begin() *gorm.DB
 }

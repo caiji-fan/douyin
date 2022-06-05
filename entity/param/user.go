@@ -9,6 +9,7 @@ type User struct {
 	Password string `form:"password"  binding:"gte=6" msg:"密码格式不正确"`
 }
 
+// UserInfo 查看用户信息参数
 type UserInfo struct {
 	UserId int `form:"user_id" binding:"required" msg:"无效的用户标识"`
 }

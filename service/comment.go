@@ -12,7 +12,8 @@ import (
 type Comment interface {
 	// Comment 			评论操作
 	// commentParam 	评论参数
-	Comment(commentParam *param.Comment) error
+	// userId 			当前用户id
+	Comment(commentParam *param.Comment, userId int) error
 
 	// CommentList 		查看评论列表
 	// videoId			视频id

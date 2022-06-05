@@ -21,12 +21,10 @@ import (
 func JWTAuth(ctx *gin.Context) {
 	var err error
 	var tokenString string
-	var userId int
 	//判断投稿接口
 	path := ctx.Request.URL.Path
 	isFeed := strings.Contains(path, "/feed")
 	isPublish := strings.Contains(path, "/publish/action")
-	needCompareUserId := strings.Contains(path, "/favorite/action") || strings.Contains(path, "/comment/action") || strings.Contains(path, "/relation/action")
 	if isPublish {
 		//投稿接口 通过form-data获取token
 		tokenString = ctx.PostForm("token")
@@ -38,11 +36,9 @@ func JWTAuth(ctx *gin.Context) {
 			return
 		}
 	} else {
-		//获取token
+		//获取token,没有token需要拦截
 		tokenString = ctx.Query("token")
 	}
-	//获取参数userId
-	userId, err = getUserId(ctx)
 
 	//解析token
 	err, uid := parseToken(ctx, tokenString)
@@ -53,15 +49,6 @@ func JWTAuth(ctx *gin.Context) {
 	if !isFeed {
 		//从redis判断token是否有效
 		err = tokenValid(ctx, uid)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}
-
-	//对比两个id是否一致如果没有传入用户id就不用对比
-	if needCompareUserId {
-		err = equalId(ctx, userId, uid)
 		if err != nil {
 			log.Println(err)
 			return

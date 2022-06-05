@@ -17,23 +17,23 @@ import (
 type Comment struct {
 }
 
-func (c Comment) Comment(commentParam *param.Comment) error {
+func (c Comment) Comment(commentParam *param.Comment, userId int) error {
 	err := validVideoExistence(commentParam.VideoID)
 	if err != nil {
 		return err
 	}
 	if commentParam.ActionType == param.DO_COMMENT {
-		return doComment(commentParam)
+		return doComment(commentParam, userId)
 	} else {
 		return deleteComment(commentParam)
 	}
 }
 
 // 发布评论
-func doComment(commentParam *param.Comment) error {
+func doComment(commentParam *param.Comment, userId int) error {
 	commentDao := daoimpl.NewCommentDaoInstance()
 	var comment po.Comment
-	comment.SenderId = commentParam.UserId
+	comment.SenderId = userId
 	comment.VideoId = commentParam.VideoID
 	comment.Content = commentParam.CommentText
 	comment.Status = po.NORMAL

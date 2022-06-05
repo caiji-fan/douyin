@@ -4,13 +4,17 @@
 package controller
 
 import (
+	"douyin/config"
 	"douyin/entity/myerr"
 	"douyin/entity/param"
 	"douyin/entity/response"
+	"douyin/middleware"
 	"douyin/service/serviceimpl"
 	"douyin/util/webutil"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
+	"strconv"
 )
 
 var favoriteService = serviceimpl.NewFavoriteServiceInstance()
@@ -26,7 +30,12 @@ func Like(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, favorite))))
 		return
 	}
-	err = favoriteService.Like(&favorite)
+	userId, err := strconv.Atoi(middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId])
+	if err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, response.SystemError)
+	}
+	err = favoriteService.Like(&favorite, userId)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, response.SystemError)
 		return

@@ -108,6 +108,9 @@ func saveTokenToRedis(userId int, token string) error {
 	if err != nil {
 		return err
 	}
-	redisutil.SetWithExpireTime(config.Config.Redis.Key.Token+strconv.Itoa(userId), &token, tokenExpireTime)
+	err = redisutil.SetWithExpireTime(config.Config.Redis.Key.Token+strconv.Itoa(userId), &token, tokenExpireTime)
+	if err != nil {
+		return err
+	}
 	return nil
 }
