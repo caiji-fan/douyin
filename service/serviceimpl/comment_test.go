@@ -28,8 +28,8 @@ func TestComment_validVideoExistence(t *testing.T) {
 }
 func TestComment_Comment(t *testing.T) {
 	commentService := NewCommentServiceInstance()
-	var commentParam = param.Comment{ActionType: 1, VideoID: 9, CommentText: "评论", UserId: 1}
-	err := commentService.Comment(&commentParam)
+	var commentParam = param.Comment{ActionType: 1, VideoID: 5, CommentText: "评论"}
+	err := commentService.Comment(&commentParam, 1)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -38,7 +38,7 @@ func TestComment_Comment(t *testing.T) {
 func TestComment_Comment2(t *testing.T) {
 	commentService := NewCommentServiceInstance()
 	var commentParam = param.Comment{ActionType: 0, CommentId: 1}
-	err := commentService.Comment(&commentParam)
+	err := commentService.Comment(&commentParam, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}

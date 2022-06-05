@@ -31,22 +31,62 @@ func (c Comment) Comment(commentParam *param.Comment, userId int) error {
 
 // 发布评论
 func doComment(commentParam *param.Comment, userId int) error {
-	commentDao := daoimpl.NewCommentDaoInstance()
-	var comment po.Comment
-	comment.SenderId = userId
-	comment.VideoId = commentParam.VideoID
-	comment.Content = commentParam.CommentText
-	comment.Status = po.NORMAL
-	return commentDao.Insert(&comment)
+	tx := daoimpl.NewCommentDaoInstance().Begin()
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	var err error
+	go func() {
+		defer wg.Done()
+		var comment po.Comment
+		comment.SenderId = userId
+		comment.VideoId = commentParam.VideoID
+		comment.Content = commentParam.CommentText
+		comment.Status = po.NORMAL
+		err = daoimpl.NewCommentDaoInstance().Insert(&comment, tx, true)
+	}()
+
+	go func() {
+		defer wg.Done()
+		err = daoimpl.NewVideoDaoInstance().ChangeCommentCount(1, commentParam.VideoID, tx, true)
+	}()
+
+	wg.Wait()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
 }
 
 // 删除评论
 func deleteComment(commentParam *param.Comment) error {
-	commentDao := daoimpl.NewCommentDaoInstance()
-	var comment po.Comment
-	comment.ID = commentParam.CommentId
-	comment.Status = po.DELETE
-	return commentDao.UpdateByCondition(&comment)
+	tx := daoimpl.NewCommentDaoInstance().Begin()
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	var err error
+	go func() {
+		defer wg.Done()
+		commentDao := daoimpl.NewCommentDaoInstance()
+		var comment po.Comment
+		comment.ID = commentParam.CommentId
+		comment.Status = po.DELETE
+		err = commentDao.UpdateByCondition(&comment, tx, true)
+	}()
+
+	go func() {
+		defer wg.Done()
+		err = daoimpl.NewVideoDaoInstance().ChangeCommentCount(1, commentParam.VideoID, tx, true)
+	}()
+
+	wg.Wait()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
+
 }
 
 // 校验视频是否存在

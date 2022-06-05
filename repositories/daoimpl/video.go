@@ -14,6 +14,19 @@ import (
 type Video struct {
 }
 
+func (v Video) ChangeCommentCount(difference, videoId int, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
+	if err := db1.Model(&po.Video{EntityModel: po.EntityModel{ID: videoId}}).UpdateColumn("comment_count", gorm.Expr("comment_count + ?", difference)).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (v Video) ChangeFavoriteCount(difference, videoId int, tx *gorm.DB, isTx bool) error {
 	var db1 *gorm.DB
 	if isTx {
