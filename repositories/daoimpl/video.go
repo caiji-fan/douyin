@@ -14,6 +14,19 @@ import (
 type Video struct {
 }
 
+func (v Video) ChangeFavoriteCount(difference, videoId int, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
+	if err := db1.Model(&po.Video{EntityModel: po.EntityModel{ID: videoId}}).UpdateColumn("favorite_count", gorm.Expr("favorite_count + ?", difference)).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (v Video) QueryVideosByUserId(userId int) (*[]po.Video, error) {
 	var poVideos []po.Video
 	err := db.Raw("SELECT v.* FROM dy_video v,dy_favorite f WHERE v.`id`= f.`video_id` AND f.`user_id` = ? ORDER BY f.`create_time` DESC", userId).Scan(&poVideos).Error

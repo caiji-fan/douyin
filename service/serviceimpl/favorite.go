@@ -17,10 +17,9 @@ import (
 type Favorite struct {
 }
 
-func (f Favorite) Like(favoriteParam *param.Favorite) error {
+func (f Favorite) Like(favoriteParam *param.Favorite, userId int) error {
 	var err error
 	tx := daoimpl.NewVideoDaoInstance().Begin()
-	userId := favoriteParam.UserID
 	videoId := favoriteParam.VideoID
 	actionType := favoriteParam.ActionType
 	wait := sync.WaitGroup{}
@@ -70,13 +69,7 @@ func doLike(videoId, userId int, wait *sync.WaitGroup, tx *gorm.DB) error {
 	//增加视频点赞数
 	go func() {
 		defer wait.Done()
-		var video *po.Video
-		video, err = daoimpl.NewVideoDaoInstance().QueryForUpdate(videoId, tx)
-		if err != nil {
-			return
-		}
-		video.FavoriteCount = video.FavoriteCount + 1
-		err = daoimpl.NewVideoDaoInstance().UpdateByCondition(video, tx, true)
+		err = daoimpl.NewVideoDaoInstance().ChangeFavoriteCount(1, videoId, tx, true)
 	}()
 	wait.Wait()
 	if err != nil {
@@ -103,13 +96,7 @@ func cancelLike(videoId, userId int, wait *sync.WaitGroup, tx *gorm.DB) error {
 	//减少视频点赞数
 	go func() {
 		defer wait.Done()
-		var video *po.Video
-		video, err = daoimpl.NewVideoDaoInstance().QueryForUpdate(videoId, tx)
-		if err != nil {
-			return
-		}
-		video.FavoriteCount = video.FavoriteCount - 1
-		err = daoimpl.NewVideoDaoInstance().UpdateByCondition(video, tx, true)
+		err = daoimpl.NewVideoDaoInstance().ChangeFavoriteCount(-1, videoId, tx, true)
 	}()
 	wait.Wait()
 	if err != nil {
