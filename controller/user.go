@@ -10,6 +10,7 @@ import (
 	"douyin/service/serviceimpl"
 	"douyin/util/webutil"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
@@ -18,11 +19,13 @@ func Register(context *gin.Context) {
 	var user param.User
 	err := context.ShouldBindQuery(&user)
 	if err != nil {
+		log.Println(err)
 		context.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, user))))
 		return
 	}
 	userId, token, err := serviceimpl.NewUserService().Register(user)
 	if err != nil { //注册失败
+		log.Println(err)
 		context.JSON(http.StatusInternalServerError, response.ErrorResponse(err))
 	} else { //注册成功
 		context.JSON(http.StatusOK, response.Register{
@@ -38,19 +41,21 @@ func Login(context *gin.Context) {
 	var user param.User
 	err := context.ShouldBindQuery(&user)
 	if err != nil {
+		log.Println(err)
 		context.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, user))))
 		return
 	}
 	userId, token, err := serviceimpl.NewUserService().Login(user)
 	if err != nil { //登录失败
+		log.Println(err)
 		context.JSON(http.StatusProxyAuthRequired, response.ErrorResponse(err))
-	} else { //登录成功
-		context.JSON(http.StatusOK, response.Register{
-			Response: response.Ok,
-			UserId:   userId,
-			Token:    token,
-		})
+		return
 	}
+	context.JSON(http.StatusOK, response.Register{
+		Response: response.Ok,
+		UserId:   userId,
+		Token:    token,
+	})
 }
 
 // UserInfo 		查看用户信息

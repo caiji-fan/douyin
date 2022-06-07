@@ -27,6 +27,7 @@ func Like(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(&favorite)
 
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, favorite))))
 		return
 	}
@@ -37,6 +38,7 @@ func Like(ctx *gin.Context) {
 	}
 	err = favoriteService.Like(&favorite, userId)
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusInternalServerError, response.SystemError)
 		return
 	}
@@ -50,12 +52,14 @@ func FavoriteList(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(&favoriteListParam)
 
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, favoriteListParam))))
 		return
 	}
 
 	videoList, err := favoriteService.FavoriteList(favoriteListParam.UserId)
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusInternalServerError, response.SystemError)
 		return
 	}

@@ -27,6 +27,7 @@ func Follow(ctx *gin.Context) {
 	err := ctx.ShouldBindQuery(&relation)
 
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.ArgumentInvalid(webutil.GetValidMsg(err, relation))))
 		return
 	}
@@ -38,6 +39,7 @@ func Follow(ctx *gin.Context) {
 	}
 	err = relationService.Follow(&relation, userId)
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusForbidden, response.SystemError)
 		return
 	}
@@ -49,11 +51,13 @@ func FollowList(ctx *gin.Context) {
 	var followListParam param.FollowList
 	err := ctx.ShouldBindQuery(&followListParam)
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, followListParam))))
 		return
 	}
 	userList, err := relationService.FollowList(followListParam.UserID)
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusForbidden, response.SystemError)
 		return
 	}
@@ -69,11 +73,13 @@ func FansList(ctx *gin.Context) {
 	var fansListParam param.FollowList
 	err := ctx.ShouldBindQuery(&fansListParam)
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, response.ArgumentError(myerr.ArgumentInvalid(webutil.GetValidMsg(err, fansListParam))))
 		return
 	}
 	userList, err := relationService.FansList(fansListParam.UserID)
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(http.StatusForbidden, response.SystemError)
 		return
 	}
