@@ -23,10 +23,17 @@ func StartJob() {
 	handleErrorMSGJob()
 }
 
+// 返回一个支持至 秒 级别的 cron
+func newWithSeconds() *cron.Cron {
+	secondParser := cron.NewParser(cron.Second | cron.Minute |
+		cron.Hour | cron.Dom | cron.Month | cron.DowOptional | cron.Descriptor)
+	return cron.New(cron.WithParser(secondParser), cron.WithChain())
+}
+
 // 清理用户发件箱
 func clearOutBoxJob() {
-	c := cron.New()
-	_, err := c.AddFunc("@every 24h", clearOutBox)
+	c := newWithSeconds()
+	_, err := c.AddFunc("0 0 0 * * *", clearOutBox)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -35,7 +42,7 @@ func clearOutBoxJob() {
 
 // 处理错误消息
 func handleErrorMSGJob() {
-	c := cron.New()
+	c := newWithSeconds()
 	_, err := c.AddFunc("@every 10s", handleErrorMSG)
 	if err != nil {
 		log.Fatalln(err)
@@ -46,8 +53,8 @@ func handleErrorMSGJob() {
 
 // 清理本地临时存储的视频
 func clearLocalVideoJob() {
-	c := cron.New()
-	_, err := c.AddFunc("@every 168h", clearLocalVideo)
+	c := newWithSeconds()
+	_, err := c.AddFunc("0 0 1 * * *", clearLocalVideo)
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -180,7 +187,7 @@ func handleErrorMSG() {
 // 清理本地临时存储的视频
 func clearLocalVideo() {
 	// 获得两周前的日期
-	now := time.Now().AddDate(0, 0, -14).Format(config.Config.StandardDate)
+	now := time.Now().AddDate(0, 0, -7).Format(config.Config.StandardDate)
 	// 拼接两周前的视频和文件路径
 	videoPath, err := filepath.Abs(filepath.Join(config.Config.Service.VideoTempDir, now))
 	if err != nil {

@@ -68,8 +68,9 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 		return nil, 0, err
 	}
 	// 获取查询视频的时间条件，如果从redis从查到了数据，则为数据最后一条的时间，否则为前端传来的时间
+	// 如果redis中查到数据，还需比较两个时间取最早的时间，防止刷视频的过程中得到feed导致重新刷一遍已经刷过的视频
 	var timeCondition time.Time
-	if len(videos) == 0 {
+	if len(videos) == 0 || time.UnixMilli(latestTime).Before(videos[len(videos)-1].CreateTime) {
 		timeCondition = time.UnixMilli(latestTime)
 	} else {
 		timeCondition = videos[len(videos)-1].CreateTime
@@ -102,8 +103,9 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 		tx.Commit()
 	}
 	// 获得下一次请求的时间
+	// 有数据响应时，取上一次的latest_time和当前响应最后一个的最早/小的一个时间，防止重复
 	nextTime := latestTime
-	if len(videos) > 0 {
+	if len(videos) > 0 && time.UnixMilli(latestTime).After(videos[len(videos)-1].CreateTime) {
 		nextTime = videos[len(videos)-1].CreateTime.UnixMilli()
 	}
 	return videoBOS, nextTime, nil

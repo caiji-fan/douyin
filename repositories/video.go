@@ -42,11 +42,6 @@ type Video interface {
 	// video						更新条件
 	UpdateByCondition(video *po.Video, tx *gorm.DB, isTx bool) error
 
-	// QueryForUpdate 	加锁查询
-	// videoId  		视频id
-	// @return			视频数据
-	QueryForUpdate(videoId int, tx *gorm.DB) (*po.Video, error)
-
 	// QueryVideosByUserId		通过用户id联表查询
 	// userId 					用户id
 	// @return 					(倒序)视频集合

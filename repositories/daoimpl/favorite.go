@@ -50,24 +50,6 @@ func (f Favorite) DeleteByCondition(favorite *po.Favorite) error {
 	return nil
 }
 
-func (f Favorite) QueryByCondition(favorite *po.Favorite) (*[]po.Favorite, error) {
-	videoId := favorite.VideoId
-	userId := favorite.UserId
-	db1 := db
-	if videoId != 0 {
-		db1 = db1.Where("video_id = ?", videoId)
-	}
-	if userId != 0 {
-		db1 = db1.Where("user_id = ?", userId)
-	}
-	var favorites []po.Favorite
-	err := db1.Find(&favorites).Error
-	if err != nil {
-		return nil, err
-	}
-	return &favorites, nil
-}
-
 var (
 	favorite     repositories.Favorite
 	favoriteOnce sync.Once

@@ -49,12 +49,6 @@ func (v Video) QueryVideosByUserId(userId int) (*[]po.Video, error) {
 	return &poVideos, err
 }
 
-func (v Video) QueryForUpdate(videoId int, tx *gorm.DB) (*po.Video, error) {
-	var video po.Video
-	err := tx.Raw("select id,play_url,cover_url,favorite_count,comment_count,author_id,create_time,update_time from dy_video where id =? FOR UPDATE", videoId).Scan(&video).Error
-	return &video, err
-}
-
 func (v Video) UpdateByCondition(video *po.Video, tx *gorm.DB, isTx bool) error {
 	var client *gorm.DB
 	if isTx {

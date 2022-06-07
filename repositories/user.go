@@ -24,17 +24,6 @@ type User interface {
 	// @return			用户集
 	QueryBatchIds(userIds *[]int) (*[]po.User, error)
 
-	// QueryForUpdate 	加锁查询
-	// userId  			用户id
-	// @return			用户数据
-	QueryForUpdate(userId int, tx *gorm.DB) (*po.User, error)
-
-	// UpdateByCondition 条件更新
-	// user 			更新数据
-	// tx				如果需要包含在事务内，传入该操作对象
-	// isTx				是否在事务内
-	UpdateByCondition(user *po.User, tx *gorm.DB, isTx bool) error
-
 	// QueryByCondition		通过已有的属性查询
 	// user				用户
 	// @return 			用户切片

@@ -21,9 +21,4 @@ type Favorite interface {
 	// DeleteByCondition		条件删除点赞数据
 	// favorite					删除条件
 	DeleteByCondition(favorite *po.Favorite) error
-
-	// QueryByCondition			条件查询
-	// favorite					查询条件
-	// @return 					favorite集合
-	QueryByCondition(favorite *po.Favorite) (*[]po.Favorite, error)
 }
