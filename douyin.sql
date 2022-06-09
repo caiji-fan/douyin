@@ -83,7 +83,7 @@ create table dy_user
    password             varchar(32) not null,
    create_time TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) not null,
    update_time TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6) not null,
-   primary key (id),
+   primary key (id)
 )auto_increment=1;
 
 /*==============================================================*/
