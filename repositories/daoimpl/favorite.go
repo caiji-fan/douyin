@@ -6,15 +6,21 @@ package daoimpl
 import (
 	"douyin/entity/po"
 	"douyin/repositories"
+	"gorm.io/gorm"
 	"sync"
 )
 
 type Favorite struct {
 }
 
-func (f Favorite) Insert(favorite *po.Favorite) error {
-	err := db.Select([]string{"video_id", "user_id"}).Create(favorite).Error
-	if err != nil {
+func (f Favorite) Insert(favorite *po.Favorite, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
+	if err := db1.Select([]string{"video_id", "user_id"}).Create(favorite).Error; err != nil {
 		return err
 	}
 	return nil
@@ -33,10 +39,15 @@ func (f Favorite) QueryVideoIdsByUserId(userId int) ([]int, error) {
 	return videoIds, nil
 }
 
-func (f Favorite) DeleteByCondition(favorite *po.Favorite) error {
+func (f Favorite) DeleteByCondition(favorite *po.Favorite, tx *gorm.DB, isTx bool) error {
+	var db1 *gorm.DB
+	if isTx {
+		db1 = tx
+	} else {
+		db1 = db
+	}
 	videoId := favorite.VideoId
 	userId := favorite.UserId
-	db1 := db
 	if videoId != 0 {
 		db1 = db1.Where("video_id = ?", videoId)
 	}

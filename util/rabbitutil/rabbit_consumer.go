@@ -336,7 +336,7 @@ func doLike(videoId, userId int, wait *sync.WaitGroup, tx *gorm.DB) error {
 	//点赞视频
 	go func() {
 		defer wait.Done()
-		err = daoimpl.NewFavoriteDaoInstance().Insert(&po.Favorite{VideoId: videoId, UserId: userId})
+		err = daoimpl.NewFavoriteDaoInstance().Insert(&po.Favorite{VideoId: videoId, UserId: userId}, tx, true)
 		if err != nil {
 			return
 		}
@@ -359,7 +359,7 @@ func cancelLike(videoId, userId int, wait *sync.WaitGroup, tx *gorm.DB) error {
 	//取消点赞视频
 	go func() {
 		defer wait.Done()
-		err = daoimpl.NewFavoriteDaoInstance().DeleteByCondition(&po.Favorite{VideoId: videoId, UserId: userId})
+		err = daoimpl.NewFavoriteDaoInstance().DeleteByCondition(&po.Favorite{VideoId: videoId, UserId: userId}, tx, true)
 		if err != nil {
 			return
 		}
