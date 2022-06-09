@@ -9,4 +9,5 @@ type service struct {
 	CoverTempDir string `yaml:"cover-temp-dir"`
 	PageSize     int    `yaml:"page-size"`
 	FFMPEGPath   string `yaml:"ffmpeg-path"`
+	FeedLoop     bool   `yaml:"feed-loop"`
 }

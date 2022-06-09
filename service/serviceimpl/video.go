@@ -103,11 +103,20 @@ func (v Video) Feed(userId int, isLogin bool, latestTime int64) ([]bo.Video, int
 		tx.Commit()
 	}
 	// 获得下一次请求的时间
-	// 有数据响应时，取上一次的latest_time和当前响应最后一个的最早/小的一个时间，防止重复
 	nextTime := latestTime
-	if len(videos) > 0 && time.UnixMilli(latestTime).After(videos[len(videos)-1].CreateTime) {
-		nextTime = videos[len(videos)-1].CreateTime.UnixMilli()
+	// 是否循环播放视频
+	if config.Config.Service.FeedLoop {
+		if len(videos) == config.Config.Service.PageSize {
+			nextTime = videos[len(videos)-1].CreateTime.UnixMilli()
+		} else {
+			nextTime = time.Now().UnixMilli()
+		}
+	} else {
+		if len(videos) > 0 && time.UnixMilli(latestTime).After(videos[len(videos)-1].CreateTime) {
+			nextTime = videos[len(videos)-1].CreateTime.UnixMilli()
+		}
 	}
+
 	return videoBOS, nextTime, nil
 }
 

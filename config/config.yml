@@ -112,6 +112,7 @@ service:
   cover-temp-dir: "public/dy/cover/"
   # 分页大小
   page-size: 10
+  feed-loop: true
 jwt:
   expire-time: 86400
   secret-key: "douyinQ"
