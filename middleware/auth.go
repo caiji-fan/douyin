@@ -60,20 +60,6 @@ func JWTAuth(ctx *gin.Context) {
 	ctx.Next()
 }
 
-//获取参数user_Id
-func getUserId(ctx *gin.Context) (int, error) {
-	userIdStr := ctx.Query("user_id")
-	if userIdStr == "" {
-		return 0, nil
-	}
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, response.SystemError)
-		ctx.Abort()
-	}
-	return userId, nil
-}
-
 //解析token
 func parseToken(ctx *gin.Context, token string) (error, int) {
 	//解析出token中的用户id
@@ -96,15 +82,4 @@ func tokenValid(ctx *gin.Context, userId int) error {
 		return errors.New("redis中token不存在")
 	}
 	return err
-}
-
-//判断两个id是否一致
-func equalId(ctx *gin.Context, userId int, uId int) error {
-	if userId != uId {
-		//id不一致
-		ctx.JSON(http.StatusBadRequest, response.ErrorResponse(myerr.NoPermission))
-		ctx.Abort()
-		return errors.New("id不一致")
-	}
-	return nil
 }
