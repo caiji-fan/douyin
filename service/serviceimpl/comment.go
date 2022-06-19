@@ -4,13 +4,16 @@
 package serviceimpl
 
 import (
+	"douyin/config"
 	"douyin/entity/bo"
 	"douyin/entity/myerr"
 	"douyin/entity/param"
 	"douyin/entity/po"
+	"douyin/middleware"
 	"douyin/repositories/daoimpl"
 	"douyin/service"
 	"douyin/util/entityutil"
+	"strconv"
 	"sync"
 )
 
@@ -61,10 +64,14 @@ func doComment(commentParam *param.Comment, userId int) error {
 
 // 删除评论
 func deleteComment(commentParam *param.Comment) error {
+	var err error
+	err = validUser(commentParam.CommentId)
+	if err != nil {
+		return err
+	}
 	tx := daoimpl.Begin()
 	wg := sync.WaitGroup{}
 	wg.Add(2)
-	var err error
 	go func() {
 		defer wg.Done()
 		commentDao := daoimpl.NewCommentDaoInstance()
@@ -124,6 +131,21 @@ func (c Comment) CommentList(videoId int) (*[]bo.Comment, error) {
 		return nil, err
 	}
 	return &commentBos, nil
+}
+
+func validUser(commentId int) error {
+	comment, err := daoimpl.NewCommentDaoInstance().QueryByConditionOrderByTime(&po.Comment{EntityModel: po.EntityModel{ID: commentId}})
+	if err != nil {
+		return err
+	}
+	currentUserId, err := strconv.Atoi(middleware.ThreadLocal.Get().(map[string]string)[config.Config.ThreadLocal.Keys.UserId])
+	if err != nil {
+		return err
+	}
+	if (*comment)[0].SenderId != currentUserId {
+		return myerr.NoPermission
+	}
+	return nil
 }
 
 var (

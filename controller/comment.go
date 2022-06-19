@@ -31,6 +31,7 @@ func Comment(ctx *gin.Context) {
 		log.Println(err)
 		ctx.JSON(http.StatusInternalServerError, response.SystemError)
 	}
+
 	err = serviceimpl.NewCommentServiceInstance().Comment(&commentParam, userId)
 	if err != nil {
 		log.Println(err)
